@@ -25,7 +25,7 @@
       ? root.location.origin
       : '';
 
-    if (!runtimeConfig.bridgeUrl && DEPLOYMENT_BRIDGE_URLS[runtimeOrigin]) {
+    if (DEPLOYMENT_BRIDGE_URLS[runtimeOrigin]) {
       runtimeConfig.bridgeUrl = DEPLOYMENT_BRIDGE_URLS[runtimeOrigin];
     }
 
