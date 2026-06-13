@@ -178,7 +178,6 @@ function renderPaymentTable(rows) {
     <div class="section-heading">
       <div>
         <h2>Bảng tiền đã đóng / còn lại</h2>
-        <p>Tiền phải đóng được tính từ toàn bộ séc thua. Tiền đã đóng được cộng từ các khoản ghi ở trang này.</p>
       </div>
     </div>
     <div class="table-wrap">

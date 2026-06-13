@@ -9,9 +9,8 @@
 <body>
   <header class="app-header">
     <div>
-      <p class="eyebrow">Volleyball Set Loser Tracker</p>
-      <h1>Sổ thua séc bóng chuyền</h1>
-      <p class="subtitle">Mỗi lần chọn người thua và bấm lưu sẽ được tính là 1 séc. Không cần nhập tên trận, không cần chọn đội.</p>
+      <p class="eyebrow">Bóng chuyền VKT</p>
+      <h1>Sổ thua bóng chuyền</h1>
       <nav class="page-nav" aria-label="Điều hướng">
         <a class="nav-link active" href="index.html">Nhập séc theo ngày</a>
         <a class="nav-link" href="all-days.html">Tổng hợp tất cả các ngày</a>
@@ -33,7 +32,7 @@
 
   <main class="layout">
     <aside class="sidebar">
-      <section class="panel">
+      <section class="panel mobile-order-entry">
         <h2>Chọn người thua</h2>
         <label class="field-label">
           Tiền / điểm mỗi người thua trong 1 séc
@@ -45,24 +44,22 @@
         </label>
         <div id="losersList" class="check-list empty-state-small"></div>
         <button id="btnSaveSet" class="btn primary full" type="button">Lưu 1 séc</button>
-        <p class="help">Các người đang được tích sẽ được lưu là người thua của séc mới. Sau khi lưu, bảng tổng hợp cuối cùng tự cộng.</p>
       </section>
 
-      <section class="panel">
+      <section class="panel mobile-order-data">
         <h2>Dữ liệu</h2>
         <div class="button-grid">
           <a class="btn" href="all-days.html">Tổng hợp tất cả ngày</a>
           <a class="btn" href="payments.html">Tiền đã đóng</a>
           <button id="btnClearDate" class="btn danger-light span-2" type="button">Xóa dữ liệu ngày này</button>
-        </div>
-        <p class="help">Khi bridge Apps Script đã được cấu hình, dữ liệu sẽ lưu chung online trong Google Sheets và xem được từ mọi máy.</p>
+        </div> 
       </section>
     </aside>
 
     <section class="content">
-      <section class="summary-grid" id="summaryGrid"></section>
-      <section id="finalSummary" class="panel final-summary"></section>
-      <section id="setsContainer" class="sets-history"></section>
+      <section class="summary-grid mobile-order-summary-cards" id="summaryGrid"></section>
+      <section id="finalSummary" class="panel final-summary mobile-order-summary-table"></section>
+      <section id="setsContainer" class="sets-history mobile-order-history"></section>
     </section>
   </main>
 
