@@ -475,3 +475,732 @@ button {
     min-height: 82px;
   }
 }
+
+/* =========================================================
+   GIỮ DẠNG BẢNG TRUYỀN THỐNG TRÊN IPHONE
+   - Khung bảng rộng đúng bằng phần Chọn người thua.
+   - Bảng nhiều cột được vuốt ngang bên trong khung.
+   - Không chuyển từng dòng thành thẻ.
+   ========================================================= */
+@media (max-width: 768px) {
+  .layout,
+  .single-layout,
+  .sidebar,
+  .content,
+  .layout > *,
+  .single-layout > *,
+  .final-summary,
+  #playersAllSummary,
+  #daysSummary,
+  #paymentTable,
+  #paymentHistory,
+  .mobile-order-entry,
+  .mobile-order-summary-table {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .final-summary,
+  #playersAllSummary,
+  #daysSummary,
+  #paymentTable,
+  #paymentHistory {
+    overflow: hidden;
+  }
+
+  .final-summary .table-wrap,
+  #playersAllSummary .table-wrap,
+  #daysSummary .table-wrap,
+  #paymentTable .table-wrap,
+  #paymentHistory .table-wrap {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  .final-summary .table,
+  #playersAllSummary .table,
+  #daysSummary .table,
+  #paymentTable .table,
+  #paymentHistory .table {
+    display: table;
+    width: 100%;
+    min-width: 660px;
+    max-width: none;
+    border-collapse: collapse;
+    table-layout: auto;
+  }
+
+  .final-summary .table thead,
+  #playersAllSummary .table thead,
+  #daysSummary .table thead,
+  #paymentTable .table thead,
+  #paymentHistory .table thead {
+    display: table-header-group;
+  }
+
+  .final-summary .table tbody,
+  #playersAllSummary .table tbody,
+  #daysSummary .table tbody,
+  #paymentTable .table tbody,
+  #paymentHistory .table tbody {
+    display: table-row-group;
+  }
+
+  .final-summary .table tr,
+  #playersAllSummary .table tr,
+  #daysSummary .table tr,
+  #paymentTable .table tr,
+  #paymentHistory .table tr {
+    display: table-row;
+  }
+
+  .final-summary .table th,
+  .final-summary .table td,
+  #playersAllSummary .table th,
+  #playersAllSummary .table td,
+  #daysSummary .table th,
+  #daysSummary .table td,
+  #paymentTable .table th,
+  #paymentTable .table td,
+  #paymentHistory .table th,
+  #paymentHistory .table td {
+    display: table-cell;
+    width: auto;
+    min-width: 0;
+    padding: 10px 11px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    line-height: 1.35;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .final-summary .table td::before,
+  #playersAllSummary .table td::before,
+  #daysSummary .table td::before,
+  #paymentTable .table td::before,
+  #paymentHistory .table td::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  .final-summary .table th:first-child,
+  .final-summary .table td:first-child,
+  #playersAllSummary .table th:first-child,
+  #playersAllSummary .table td:first-child,
+  #daysSummary .table th:first-child,
+  #daysSummary .table td:first-child,
+  #paymentTable .table th:first-child,
+  #paymentTable .table td:first-child,
+  #paymentHistory .table th:first-child,
+  #paymentHistory .table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    max-width: 155px;
+    white-space: normal;
+    background: #fff;
+    box-shadow: 1px 0 0 var(--border);
+  }
+
+  .final-summary .table th:first-child,
+  #playersAllSummary .table th:first-child,
+  #daysSummary .table th:first-child,
+  #paymentTable .table th:first-child,
+  #paymentHistory .table th:first-child {
+    z-index: 3;
+    background: #f8fafc;
+  }
+}
+
+/* =========================================================
+   BẢNG VỪA TOÀN BỘ MÀN HÌNH IPHONE, KHÔNG CUỘN NGANG
+   - Giữ dạng bảng hàng/cột.
+   - Tất cả cột được co lại trong chiều rộng khung.
+   - Nội dung dài tự xuống dòng.
+   ========================================================= */
+@media (max-width: 768px) {
+  .final-summary .table-wrap,
+  #playersAllSummary .table-wrap,
+  #daysSummary .table-wrap,
+  #paymentTable .table-wrap,
+  #paymentHistory .table-wrap {
+    overflow-x: hidden !important;
+    overflow-y: visible;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .final-summary .table,
+  #playersAllSummary .table,
+  #daysSummary .table,
+  #paymentTable .table,
+  #paymentHistory .table {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  .final-summary .table th,
+  .final-summary .table td,
+  #playersAllSummary .table th,
+  #playersAllSummary .table td,
+  #daysSummary .table th,
+  #daysSummary .table td,
+  #paymentTable .table th,
+  #paymentTable .table td,
+  #paymentHistory .table th,
+  #paymentHistory .table td {
+    position: static !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    padding: 5px 3px !important;
+    font-size: 10px !important;
+    line-height: 1.22 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    hyphens: auto;
+    box-shadow: none !important;
+    vertical-align: middle;
+  }
+
+  .final-summary .table th,
+  #playersAllSummary .table th,
+  #daysSummary .table th,
+  #paymentTable .table th,
+  #paymentHistory .table th {
+    font-size: 9px !important;
+    text-align: center;
+  }
+
+  .final-summary .table td:not(:first-child),
+  #playersAllSummary .table td:not(:first-child),
+  #daysSummary .table td:not(:first-child),
+  #paymentTable .table td:not(:first-child),
+  #paymentHistory .table td:not(:first-child) {
+    text-align: center;
+  }
+
+  .final-summary .badge,
+  #playersAllSummary .badge,
+  #daysSummary .badge,
+  #paymentTable .badge,
+  #paymentHistory .badge {
+    display: inline-flex;
+    max-width: 100%;
+    padding: 2px 3px;
+    font-size: 8px;
+    line-height: 1.15;
+    white-space: normal;
+    justify-content: center;
+    text-align: center;
+  }
+
+  #paymentTable .btn.small,
+  #paymentHistory .btn.small {
+    width: 100%;
+    min-height: 0;
+    padding: 4px 2px;
+    border-radius: 6px;
+    font-size: 8px;
+    line-height: 1.15;
+    white-space: normal;
+  }
+
+  /* Tổng hợp ngày hiện tại: 4 cột */
+  .final-summary .table th:nth-child(1),
+  .final-summary .table td:nth-child(1) { width: 28%; }
+  .final-summary .table th:nth-child(2),
+  .final-summary .table td:nth-child(2) { width: 18%; }
+  .final-summary .table th:nth-child(3),
+  .final-summary .table td:nth-child(3) { width: 31%; }
+  .final-summary .table th:nth-child(4),
+  .final-summary .table td:nth-child(4) { width: 23%; }
+
+  /* Tổng hợp theo người: 7 cột */
+  #playersAllSummary .table th:nth-child(1),
+  #playersAllSummary .table td:nth-child(1) { width: 21%; }
+  #playersAllSummary .table th:nth-child(2),
+  #playersAllSummary .table td:nth-child(2) { width: 11%; }
+  #playersAllSummary .table th:nth-child(3),
+  #playersAllSummary .table td:nth-child(3) { width: 11%; }
+  #playersAllSummary .table th:nth-child(4),
+  #playersAllSummary .table td:nth-child(4) { width: 17%; }
+  #playersAllSummary .table th:nth-child(5),
+  #playersAllSummary .table td:nth-child(5) { width: 12%; }
+  #playersAllSummary .table th:nth-child(6),
+  #playersAllSummary .table td:nth-child(6) { width: 13%; }
+  #playersAllSummary .table th:nth-child(7),
+  #playersAllSummary .table td:nth-child(7) { width: 15%; }
+
+  /* Tổng hợp theo ngày: 7 cột */
+  #daysSummary .table th:nth-child(1),
+  #daysSummary .table td:nth-child(1) { width: 15%; }
+  #daysSummary .table th:nth-child(2),
+  #daysSummary .table td:nth-child(2) { width: 9%; }
+  #daysSummary .table th:nth-child(3),
+  #daysSummary .table td:nth-child(3) { width: 10%; }
+  #daysSummary .table th:nth-child(4),
+  #daysSummary .table td:nth-child(4) { width: 14%; }
+  #daysSummary .table th:nth-child(5),
+  #daysSummary .table td:nth-child(5) { width: 10%; }
+  #daysSummary .table th:nth-child(6),
+  #daysSummary .table td:nth-child(6) { width: 18%; }
+  #daysSummary .table th:nth-child(7),
+  #daysSummary .table td:nth-child(7) { width: 24%; }
+
+  /* Bảng tiền đã đóng/còn lại: 7 cột */
+  #paymentTable .table th:nth-child(1),
+  #paymentTable .table td:nth-child(1) { width: 20%; }
+  #paymentTable .table th:nth-child(2),
+  #paymentTable .table td:nth-child(2) { width: 10%; }
+  #paymentTable .table th:nth-child(3),
+  #paymentTable .table td:nth-child(3) { width: 14%; }
+  #paymentTable .table th:nth-child(4),
+  #paymentTable .table td:nth-child(4) { width: 13%; }
+  #paymentTable .table th:nth-child(5),
+  #paymentTable .table td:nth-child(5) { width: 13%; }
+  #paymentTable .table th:nth-child(6),
+  #paymentTable .table td:nth-child(6) { width: 14%; }
+  #paymentTable .table th:nth-child(7),
+  #paymentTable .table td:nth-child(7) { width: 16%; }
+
+  /* Lịch sử đóng tiền: 5 cột */
+  #paymentHistory .table th:nth-child(1),
+  #paymentHistory .table td:nth-child(1) { width: 23%; }
+  #paymentHistory .table th:nth-child(2),
+  #paymentHistory .table td:nth-child(2) { width: 20%; }
+  #paymentHistory .table th:nth-child(3),
+  #paymentHistory .table td:nth-child(3) { width: 18%; }
+  #paymentHistory .table th:nth-child(4),
+  #paymentHistory .table td:nth-child(4) { width: 24%; }
+  #paymentHistory .table th:nth-child(5),
+  #paymentHistory .table td:nth-child(5) { width: 15%; }
+}
+
+@media (max-width: 390px) {
+  .final-summary .table th,
+  .final-summary .table td,
+  #playersAllSummary .table th,
+  #playersAllSummary .table td,
+  #daysSummary .table th,
+  #daysSummary .table td,
+  #paymentTable .table th,
+  #paymentTable .table td,
+  #paymentHistory .table th,
+  #paymentHistory .table td {
+    padding: 4px 2px !important;
+    font-size: 9px !important;
+  }
+
+  .final-summary .table th,
+  #playersAllSummary .table th,
+  #daysSummary .table th,
+  #paymentTable .table th,
+  #paymentHistory .table th {
+    font-size: 8px !important;
+  }
+}
+
+/* ============================================================
+   PHẦN ĐẦU GỌN TRÊN IPHONE
+   - Không cuộn ngang thanh điều hướng
+   - Hiển thị đủ 3 mục trong 2 hàng
+   - Ngày và nút Hôm nay nằm cùng một hàng
+   ============================================================ */
+@media (max-width: 768px) {
+  .app-header {
+    padding:
+      calc(8px + var(--iphone-safe-top))
+      calc(10px + var(--iphone-safe-right))
+      10px
+      calc(10px + var(--iphone-safe-left)) !important;
+    border-radius: 0 0 16px 16px !important;
+  }
+
+  .app-header > div:first-child {
+    min-width: 0;
+  }
+
+  .eyebrow {
+    margin: 0 0 2px !important;
+    font-size: 10px !important;
+    line-height: 1.15;
+    letter-spacing: .055em;
+  }
+
+  .app-header h1 {
+    margin: 0 !important;
+    font-size: clamp(23px, 6.6vw, 28px) !important;
+    line-height: 1.08 !important;
+    letter-spacing: -.015em;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+
+  .page-nav {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px !important;
+    width: 100%;
+    margin: 9px 0 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    flex-wrap: initial !important;
+    scroll-snap-type: none !important;
+  }
+
+  .page-nav .nav-link {
+    width: 100%;
+    min-width: 0;
+    min-height: 40px !important;
+    padding: 7px 8px !important;
+    border-radius: 12px;
+    font-size: 12.5px !important;
+    line-height: 1.15;
+    white-space: normal !important;
+    text-align: center;
+    overflow-wrap: anywhere;
+    scroll-snap-align: none;
+  }
+
+  /* Mục đang mở nằm trọn một hàng; hai mục còn lại nằm hàng dưới. */
+  .page-entry .page-nav .nav-link:nth-child(1),
+  .page-all-days .page-nav .nav-link:nth-child(2),
+  .page-payments .page-nav .nav-link:nth-child(3) {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    min-height: 38px !important;
+  }
+
+  .page-entry .page-nav .nav-link:nth-child(2),
+  .page-all-days .page-nav .nav-link:nth-child(1),
+  .page-payments .page-nav .nav-link:nth-child(1) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .page-entry .page-nav .nav-link:nth-child(3),
+  .page-all-days .page-nav .nav-link:nth-child(3),
+  .page-payments .page-nav .nav-link:nth-child(2) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .header-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 98px !important;
+    align-items: end !important;
+    gap: 7px !important;
+    width: 100%;
+    margin-top: 9px !important;
+  }
+
+  .date-filter {
+    min-width: 0;
+    gap: 4px !important;
+    padding: 7px 8px !important;
+    border-radius: 12px !important;
+    font-size: 12px !important;
+  }
+
+  .date-filter input {
+    min-width: 0;
+    min-height: 40px !important;
+    padding: 7px 8px !important;
+    border-radius: 10px !important;
+    font-size: 15px !important;
+  }
+
+  #btnToday {
+    width: 98px !important;
+    min-height: 40px !important;
+    padding: 7px 8px !important;
+    border-radius: 11px !important;
+    font-size: 14px !important;
+  }
+
+  /* Các trang chỉ có nút quay lại vẫn gọn và đủ chiều rộng. */
+  .header-actions > .btn:only-child {
+    grid-column: 1 / -1;
+    width: 100% !important;
+    min-height: 40px !important;
+  }
+
+  .sync-shell {
+    padding:
+      7px
+      calc(10px + var(--iphone-safe-right))
+      8px
+      calc(10px + var(--iphone-safe-left)) !important;
+  }
+
+  .sync-banner {
+    min-height: 40px !important;
+    padding: 8px 10px !important;
+    border-radius: 12px !important;
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+  }
+}
+
+@media (max-width: 374px) {
+  .app-header h1 {
+    font-size: 22px !important;
+  }
+
+  .page-nav .nav-link {
+    padding: 6px !important;
+    font-size: 11.5px !important;
+  }
+
+  .header-actions {
+    grid-template-columns: minmax(0, 1fr) 86px !important;
+  }
+
+  #btnToday {
+    width: 86px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* ============================================================
+   BẢNG TIỀN ĐÃ ĐÓNG / CÒN LẠI TRÊN IPHONE
+   - Thu nhỏ cột Người chơi và Số séc thua
+   - Tăng diện tích + cỡ chữ cho Phải đóng, Đã đóng, Còn lại
+   ============================================================ */
+@media (max-width: 768px) {
+  #paymentTable .table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+  }
+
+  /* Phân bổ lại chiều rộng 7 cột = 100% */
+  #paymentTable .table th:nth-child(1),
+  #paymentTable .table td:nth-child(1) { width: 14% !important; }
+
+  #paymentTable .table th:nth-child(2),
+  #paymentTable .table td:nth-child(2) { width: 7% !important; }
+
+  #paymentTable .table th:nth-child(3),
+  #paymentTable .table td:nth-child(3) { width: 20% !important; }
+
+  #paymentTable .table th:nth-child(4),
+  #paymentTable .table td:nth-child(4) { width: 19% !important; }
+
+  #paymentTable .table th:nth-child(5),
+  #paymentTable .table td:nth-child(5) { width: 19% !important; }
+
+  #paymentTable .table th:nth-child(6),
+  #paymentTable .table td:nth-child(6) { width: 10% !important; }
+
+  #paymentTable .table th:nth-child(7),
+  #paymentTable .table td:nth-child(7) { width: 11% !important; }
+
+  /* Hai cột đầu gọn hơn */
+  #paymentTable .table th:nth-child(1),
+  #paymentTable .table td:nth-child(1),
+  #paymentTable .table th:nth-child(2),
+  #paymentTable .table td:nth-child(2) {
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+    font-size: 9px !important;
+    line-height: 1.15 !important;
+  }
+
+  /* Ba cột tiền nổi bật, dễ đọc */
+  #paymentTable .table th:nth-child(3),
+  #paymentTable .table td:nth-child(3),
+  #paymentTable .table th:nth-child(4),
+  #paymentTable .table td:nth-child(4),
+  #paymentTable .table th:nth-child(5),
+  #paymentTable .table td:nth-child(5) {
+    padding-left: 3px !important;
+    padding-right: 3px !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #paymentTable .table td:nth-child(3),
+  #paymentTable .table td:nth-child(4),
+  #paymentTable .table td:nth-child(5) {
+    font-weight: 800 !important;
+  }
+
+  #paymentTable .table th,
+  #paymentTable .table td {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  #paymentTable .table th:first-child,
+  #paymentTable .table td:first-child {
+    position: static !important;
+    max-width: none !important;
+    box-shadow: none !important;
+    text-align: left;
+  }
+
+  #paymentTable .badge {
+    padding: 2px 3px !important;
+    font-size: 8px !important;
+    line-height: 1.1;
+    white-space: normal;
+  }
+
+  #paymentTable .btn.small {
+    min-height: 30px !important;
+    padding: 3px 2px !important;
+    border-radius: 7px !important;
+    font-size: 8px !important;
+    line-height: 1.1;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 390px) {
+  #paymentTable .table th:nth-child(1),
+  #paymentTable .table td:nth-child(1),
+  #paymentTable .table th:nth-child(2),
+  #paymentTable .table td:nth-child(2) {
+    font-size: 8px !important;
+  }
+
+  #paymentTable .table th:nth-child(3),
+  #paymentTable .table td:nth-child(3),
+  #paymentTable .table th:nth-child(4),
+  #paymentTable .table td:nth-child(4),
+  #paymentTable .table th:nth-child(5),
+  #paymentTable .table td:nth-child(5) {
+    font-size: 10px !important;
+  }
+}
+
+/* ============================================================
+   BẢNG TỔNG HỢP THEO NGƯỜI - TẤT CẢ CÁC NGÀY TRÊN IPHONE
+   - Thu nhỏ Người chơi, Số ngày có thua, Tổng séc thua
+   - Tăng diện tích + cỡ chữ cho Phải trả, Đã đóng, Còn lại
+   ============================================================ */
+@media (max-width: 768px) {
+  #playersAllSummary .table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+  }
+
+  /* Phân bổ lại chiều rộng 7 cột = 100% */
+  #playersAllSummary .table th:nth-child(1),
+  #playersAllSummary .table td:nth-child(1) { width: 14% !important; }
+
+  #playersAllSummary .table th:nth-child(2),
+  #playersAllSummary .table td:nth-child(2) { width: 7% !important; }
+
+  #playersAllSummary .table th:nth-child(3),
+  #playersAllSummary .table td:nth-child(3) { width: 7% !important; }
+
+  #playersAllSummary .table th:nth-child(4),
+  #playersAllSummary .table td:nth-child(4) { width: 20% !important; }
+
+  #playersAllSummary .table th:nth-child(5),
+  #playersAllSummary .table td:nth-child(5) { width: 19% !important; }
+
+  #playersAllSummary .table th:nth-child(6),
+  #playersAllSummary .table td:nth-child(6) { width: 20% !important; }
+
+  #playersAllSummary .table th:nth-child(7),
+  #playersAllSummary .table td:nth-child(7) { width: 13% !important; }
+
+  /* Ba cột thông tin đầu gọn hơn */
+  #playersAllSummary .table th:nth-child(1),
+  #playersAllSummary .table td:nth-child(1),
+  #playersAllSummary .table th:nth-child(2),
+  #playersAllSummary .table td:nth-child(2),
+  #playersAllSummary .table th:nth-child(3),
+  #playersAllSummary .table td:nth-child(3) {
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+    font-size: 9px !important;
+    line-height: 1.15 !important;
+  }
+
+  /* Ba cột tiền lớn và nổi bật */
+  #playersAllSummary .table th:nth-child(4),
+  #playersAllSummary .table td:nth-child(4),
+  #playersAllSummary .table th:nth-child(5),
+  #playersAllSummary .table td:nth-child(5),
+  #playersAllSummary .table th:nth-child(6),
+  #playersAllSummary .table td:nth-child(6) {
+    padding-left: 3px !important;
+    padding-right: 3px !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #playersAllSummary .table td:nth-child(4),
+  #playersAllSummary .table td:nth-child(5),
+  #playersAllSummary .table td:nth-child(6) {
+    font-weight: 800 !important;
+  }
+
+  #playersAllSummary .table th,
+  #playersAllSummary .table td {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  #playersAllSummary .table th:first-child,
+  #playersAllSummary .table td:first-child {
+    position: static !important;
+    max-width: none !important;
+    box-shadow: none !important;
+    text-align: left;
+  }
+
+  #playersAllSummary .badge {
+    padding: 2px 3px !important;
+    font-size: 8px !important;
+    line-height: 1.1;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 390px) {
+  #playersAllSummary .table th:nth-child(1),
+  #playersAllSummary .table td:nth-child(1),
+  #playersAllSummary .table th:nth-child(2),
+  #playersAllSummary .table td:nth-child(2),
+  #playersAllSummary .table th:nth-child(3),
+  #playersAllSummary .table td:nth-child(3) {
+    font-size: 8px !important;
+  }
+
+  #playersAllSummary .table th:nth-child(4),
+  #playersAllSummary .table td:nth-child(4),
+  #playersAllSummary .table th:nth-child(5),
+  #playersAllSummary .table td:nth-child(5),
+  #playersAllSummary .table th:nth-child(6),
+  #playersAllSummary .table td:nth-child(6) {
+    font-size: 10px !important;
+  }
+}
