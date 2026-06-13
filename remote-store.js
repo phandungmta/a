@@ -12,10 +12,27 @@
     messageNamespace: 'volleyball-tracker'
   };
 
-  const config = Object.freeze({
-    ...DEFAULT_CONFIG,
-    ...(root.APP_REMOTE_CONFIG || {})
+  const DEPLOYMENT_BRIDGE_URLS = Object.freeze({
+    'https://a-ten-mauve.vercel.app': 'https://script.google.com/macros/s/AKfycbzaluFbu_qqalxfXIERdv7SsMQMU9QINAh5a4uzaeOOdW8i01bAlthdk9z7bWjUvcCO/exec'
   });
+
+  function resolveConfig() {
+    const runtimeConfig = {
+      ...DEFAULT_CONFIG,
+      ...(root.APP_REMOTE_CONFIG || {})
+    };
+    const runtimeOrigin = root.location && typeof root.location.origin === 'string'
+      ? root.location.origin
+      : '';
+
+    if (!runtimeConfig.bridgeUrl && DEPLOYMENT_BRIDGE_URLS[runtimeOrigin]) {
+      runtimeConfig.bridgeUrl = DEPLOYMENT_BRIDGE_URLS[runtimeOrigin];
+    }
+
+    return Object.freeze(runtimeConfig);
+  }
+
+  const config = resolveConfig();
 
   let bridgeSetupPromise = null;
   let bridgeFrame = null;

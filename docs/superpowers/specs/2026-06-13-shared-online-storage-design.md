@@ -2,7 +2,7 @@
 
 ## Goal
 
-Biến app HTML tĩnh hiện có thành bản có thể chạy trên GitHub Pages nhưng dùng chung dữ liệu giữa nhiều máy.
+Biến app HTML tĩnh hiện có thành bản có thể chạy trên Vercel `https://a-ten-mauve.vercel.app` nhưng dùng chung dữ liệu giữa nhiều máy.
 
 ## Architecture
 
@@ -37,4 +37,4 @@ Biến app HTML tĩnh hiện có thành bản có thể chạy trên GitHub Page
 
 - Kiểm tra parse và test cho lớp state dùng chung.
 - Kiểm tra 3 trang đều nạp cùng một nguồn dữ liệu.
-- Kiểm tra tài liệu triển khai đủ để cấu hình Apps Script + GitHub Pages.
+- Kiểm tra tài liệu triển khai đủ để cấu hình Apps Script + Vercel.

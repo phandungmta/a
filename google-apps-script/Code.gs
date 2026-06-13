@@ -13,7 +13,7 @@ const SHEET_HEADERS = {
 };
 
 const ALLOWED_PARENT_ORIGINS = [
-  'https://phandungmta.github.io'
+  'https://a-ten-mauve.vercel.app'
 ];
 
 function doGet() {

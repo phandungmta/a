@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Tách local UI state khỏi shared data và thêm bridge Google Apps Script để dữ liệu dùng chung giữa nhiều máy khi chạy trên GitHub Pages.
+**Goal:** Tách local UI state khỏi shared data và thêm bridge Google Apps Script để dữ liệu dùng chung giữa nhiều máy khi chạy trên Vercel `https://a-ten-mauve.vercel.app`.
 
 **Architecture:** Frontend giữ dạng static site và gọi bridge Apps Script bằng `iframe` ẩn + `postMessage`. Apps Script ghi toàn bộ shared state vào Google Sheets bound spreadsheet.
 
@@ -65,6 +65,6 @@
 - Modify: `README.md`
 - Modify: `DEPLOY.md`
 
-- [ ] Viết lại hướng dẫn setup GitHub Pages + Apps Script.
+- [ ] Viết lại hướng dẫn setup Vercel + Apps Script.
 - [ ] Chạy test cục bộ cho lớp state.
 - [ ] Parse các file JavaScript để bắt lỗi cú pháp trước khi kết thúc.

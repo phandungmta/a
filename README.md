@@ -4,7 +4,7 @@ Web tĩnh HTML/CSS/JavaScript để ghi người thua từng séc, tổng hợp 
 
 Phiên bản hiện tại đã được chuẩn bị cho mô hình:
 
-- frontend chạy trên GitHub Pages
+- frontend chạy trên Vercel tại `https://a-ten-mauve.vercel.app`
 - dữ liệu dùng chung lưu trong Google Sheets
 - frontend nói chuyện với Google Sheets qua một bridge Google Apps Script
 - mọi máy mở cùng một trang web sẽ thấy cùng một dữ liệu khi bridge đã được cấu hình
@@ -58,8 +58,8 @@ Danh sách này nằm trong `shared-state.js` ở mảng `DEFAULT_PLAYER_NAMES`.
 3. Chép các file trong thư mục `google-apps-script/` vào project Apps Script bound với file Sheets.
 4. Deploy Apps Script dạng **Web app** và lấy URL `/exec`.
 5. Mở `app-config.js`, điền `bridgeUrl`.
-6. Đưa toàn bộ repo này lên GitHub và bật GitHub Pages.
-7. Mở URL GitHub Pages để dùng chung trên mọi máy.
+6. Deploy frontend lên Vercel để chạy tại `https://a-ten-mauve.vercel.app`.
+7. Mở URL Vercel đó để dùng chung trên mọi máy.
 
 ## Nếu chưa cấu hình bridge
 
@@ -69,5 +69,5 @@ Danh sách này nằm trong `shared-state.js` ở mảng `DEFAULT_PLAYER_NAMES`.
 
 ## Gợi ý tiếp theo
 
-- Nếu đổi repo hoặc đổi tài khoản GitHub Pages, cần cập nhật `ALLOWED_PARENT_ORIGINS` trong `google-apps-script/Code.gs`.
+- Nếu đổi domain frontend khỏi `https://a-ten-mauve.vercel.app`, cần cập nhật `ALLOWED_PARENT_ORIGINS` trong `google-apps-script/Code.gs` rồi deploy lại web app Apps Script.
 - Nếu muốn đổi danh sách người chơi, sửa `DEFAULT_PLAYER_NAMES` trong `shared-state.js`.
