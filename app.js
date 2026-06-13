@@ -9,6 +9,7 @@ let syncInfo = {
   remoteEnabled: false,
   source: 'default',
   notice: '',
+  tone: 'warn',
   meta: null
 };
 let editingSetId = null;
@@ -101,12 +102,24 @@ function renderSyncBanner() {
 
   if (isSaving) {
     banner.className = 'sync-banner busy';
-    banner.textContent = 'Đang lưu dữ liệu dùng chung...';
+    banner.textContent = 'Đang lưu online...';
     return;
   }
 
-  if (syncInfo.notice) {
+  if (syncInfo.tone === 'busy' && syncInfo.notice) {
+    banner.className = 'sync-banner busy';
+    banner.textContent = syncInfo.notice;
+    return;
+  }
+
+  if (syncInfo.tone === 'warn' && syncInfo.notice) {
     banner.className = 'sync-banner warn';
+    banner.textContent = syncInfo.notice;
+    return;
+  }
+
+  if (syncInfo.tone === 'ok' && syncInfo.notice) {
+    banner.className = 'sync-banner ok';
     banner.textContent = syncInfo.notice;
     return;
   }
@@ -114,13 +127,23 @@ function renderSyncBanner() {
   banner.className = syncInfo.remoteEnabled ? 'sync-banner ok' : 'sync-banner';
   banner.textContent = syncInfo.remoteEnabled
     ? `Đang dùng lưu trữ online chung${syncInfo.meta?.updatedAt ? ` · Đồng bộ gần nhất: ${formatDateTime(syncInfo.meta.updatedAt)}` : ''}`
-    : 'Dữ liệu hiện chỉ lưu trên máy này.';
+    : 'Ứng dụng đang hiển thị dữ liệu cục bộ trên máy này.';
 }
 
 function render() {
   $('#currentDate').value = state.currentDate;
   $('#stakeInput').value = state.stake || '';
+  $('#currentDate').disabled = isSaving;
+  $('#stakeInput').disabled = isSaving;
+  $('#setNote').disabled = isSaving;
+  $('#btnToday').disabled = isSaving;
+  $('#btnSaveSet').disabled = isSaving;
+  $('#btnClearDate').disabled = isSaving;
   $('#btnSaveSet').textContent = editingSetId ? 'Cập nhật séc' : 'Lưu 1 séc';
+  const importInput = $('#importJson');
+  if (importInput) {
+    importInput.disabled = isSaving;
+  }
 
   renderSyncBanner();
   renderLosersList();
@@ -253,22 +276,26 @@ function renderSets() {
 async function commitSharedMutation(mutator, options = {}) {
   if (isSaving) return false;
 
-  const previousState = core.cloneState(state);
-  mutator();
-  core.syncDefaultPlayers(state);
-  store.saveUiState(state);
+  const nextState = core.cloneState(state);
+  mutator(nextState);
+  core.syncDefaultPlayers(nextState);
+  store.saveUiState(nextState);
   isSaving = true;
-  renderSyncBanner();
   render();
 
   try {
-    const result = await store.saveSharedState(state);
+    const result = await store.saveSharedState(nextState);
     state = result.state;
-    syncInfo = result.sync;
-    render();
+    syncInfo = {
+      ...result.sync,
+      tone: 'ok',
+      notice: options.savedNotice || 'Đã lưu online'
+    };
     if (typeof options.afterSuccess === 'function') {
       options.afterSuccess();
     }
+    store.saveUiState(state);
+    render();
     if (options.successMessage) {
       showToast(options.successMessage);
     } else if (syncInfo.notice) {
@@ -276,10 +303,9 @@ async function commitSharedMutation(mutator, options = {}) {
     }
     return true;
   } catch (error) {
-    state = previousState;
-    store.saveUiState(state);
     syncInfo = {
       ...syncInfo,
+      tone: 'warn',
       notice: error instanceof Error ? error.message : 'Không lưu được dữ liệu online.'
     };
     render();
@@ -287,7 +313,6 @@ async function commitSharedMutation(mutator, options = {}) {
     return false;
   } finally {
     isSaving = false;
-    renderSyncBanner();
     render();
   }
 }
@@ -328,18 +353,23 @@ async function saveSet() {
     }
 
     const nextEditCount = Number(item.editCount || 0) + 1;
-    const success = await commitSharedMutation(() => {
+    const success = await commitSharedMutation((draftState) => {
+      const draftItem = draftState.sets.find(setItem => setItem.id === editingSetId);
+      if (!draftItem) return;
+
       const updatedAt = new Date().toISOString();
-      item.date = state.currentDate;
-      item.loserIds = loserIds.slice();
-      item.stake = stake;
-      item.note = note;
-      item.editCount = nextEditCount;
-      item.updatedAt = updatedAt;
-      item.editHistory = Array.isArray(item.editHistory) ? item.editHistory : [];
-      item.editHistory.push(updatedAt);
-      editingSetId = null;
+      draftItem.date = state.currentDate;
+      draftItem.loserIds = loserIds.slice();
+      draftItem.stake = stake;
+      draftItem.note = note;
+      draftItem.editCount = nextEditCount;
+      draftItem.updatedAt = updatedAt;
+      draftItem.editHistory = Array.isArray(draftItem.editHistory) ? draftItem.editHistory : [];
+      draftItem.editHistory.push(updatedAt);
     }, {
+      afterSuccess: () => {
+        editingSetId = null;
+      },
       successMessage: `Đã cập nhật séc. Số lần sửa: ${nextEditCount}.`,
       errorMessage: 'Không cập nhật được séc.'
     });
@@ -351,8 +381,8 @@ async function saveSet() {
     return;
   }
 
-  const success = await commitSharedMutation(() => {
-    state.sets.push({
+  const success = await commitSharedMutation((draftState) => {
+    draftState.sets.push({
       id: core.uid(),
       date: state.currentDate,
       loserIds: loserIds.slice(),
@@ -391,12 +421,14 @@ async function deleteSet(id) {
   if (isSaving) return;
   if (!confirm('Xóa séc này?')) return;
 
-  const success = await commitSharedMutation(() => {
-    state.sets = state.sets.filter(item => item.id !== id);
-    if (editingSetId === id) {
-      editingSetId = null;
-    }
+  const success = await commitSharedMutation((draftState) => {
+    draftState.sets = draftState.sets.filter(item => item.id !== id);
   }, {
+    afterSuccess: () => {
+      if (editingSetId === id) {
+        editingSetId = null;
+      }
+    },
     successMessage: 'Đã xóa séc.',
     errorMessage: 'Không xóa được séc.'
   });
@@ -410,10 +442,12 @@ async function clearCurrentDate() {
   if (isSaving) return;
   if (!confirm(`Xóa toàn bộ séc ngày ${state.currentDate}?`)) return;
 
-  const success = await commitSharedMutation(() => {
-    state.sets = state.sets.filter(item => item.date !== state.currentDate);
-    editingSetId = null;
+  const success = await commitSharedMutation((draftState) => {
+    draftState.sets = draftState.sets.filter(item => item.date !== state.currentDate);
   }, {
+    afterSuccess: () => {
+      editingSetId = null;
+    },
     successMessage: 'Đã xóa dữ liệu ngày này.',
     errorMessage: 'Không xóa được dữ liệu ngày này.'
   });
@@ -432,21 +466,27 @@ function importJson(file) {
       const imported = JSON.parse(reader.result);
       const importedState = core.buildState(imported, imported);
       core.syncDefaultPlayers(importedState);
-      editingSetId = null;
+      const previousEditingSetId = editingSetId;
       isSaving = true;
-      renderSyncBanner();
       render();
 
       try {
         const result = await store.saveSharedState(importedState);
         state = result.state;
-        syncInfo = result.sync;
+        syncInfo = {
+          ...result.sync,
+          tone: 'ok',
+          notice: 'Đã lưu online'
+        };
+        editingSetId = null;
         render();
         $('#setNote').value = '';
         showToast('Đã nhập dữ liệu JSON.');
       } catch (error) {
+        editingSetId = previousEditingSetId;
         syncInfo = {
           ...syncInfo,
+          tone: 'warn',
           notice: error instanceof Error ? error.message : 'Không nhập được dữ liệu JSON lên lưu trữ online.'
         };
         render();
@@ -482,17 +522,20 @@ function bindEvents() {
 
   $('#btnSaveSet').addEventListener('click', saveSet);
   $('#btnClearDate').addEventListener('click', clearCurrentDate);
-  $('#importJson').addEventListener('change', (event) => {
-    importJson(event.target.files[0]);
-    event.target.value = '';
-  });
+  const importInput = $('#importJson');
+  if (importInput) {
+    importInput.addEventListener('change', (event) => {
+      importJson(event.target.files[0]);
+      event.target.value = '';
+    });
+  }
 }
 
 async function init() {
   bindEvents();
-  const initial = await store.loadAppState();
-  state = initial.state;
-  syncInfo = initial.sync;
+  const cached = store.readCachedAppState();
+  state = cached.state;
+  syncInfo = cached.sync;
 
   const queryDate = dateFromQuery();
   if (queryDate) {
@@ -502,7 +545,18 @@ async function init() {
 
   render();
 
-  if (syncInfo.notice) {
+  const initial = await store.loadAppState();
+  state = initial.state;
+  syncInfo = initial.sync;
+
+  if (queryDate) {
+    state.currentDate = queryDate;
+    store.saveUiState(state);
+  }
+
+  render();
+
+  if (syncInfo.notice && syncInfo.tone !== 'busy') {
     showToast(syncInfo.notice);
   }
 }

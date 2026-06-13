@@ -8,6 +8,7 @@ let syncInfo = {
   remoteEnabled: false,
   source: 'default',
   notice: '',
+  tone: 'warn',
   meta: null
 };
 let toastTimer = null;
@@ -92,12 +93,24 @@ function renderSyncBanner() {
 
   if (isSaving) {
     banner.className = 'sync-banner busy';
-    banner.textContent = 'Đang lưu dữ liệu dùng chung...';
+    banner.textContent = 'Đang lưu online...';
     return;
   }
 
-  if (syncInfo.notice) {
+  if (syncInfo.tone === 'busy' && syncInfo.notice) {
+    banner.className = 'sync-banner busy';
+    banner.textContent = syncInfo.notice;
+    return;
+  }
+
+  if (syncInfo.tone === 'warn' && syncInfo.notice) {
     banner.className = 'sync-banner warn';
+    banner.textContent = syncInfo.notice;
+    return;
+  }
+
+  if (syncInfo.tone === 'ok' && syncInfo.notice) {
+    banner.className = 'sync-banner ok';
     banner.textContent = syncInfo.notice;
     return;
   }
@@ -105,7 +118,7 @@ function renderSyncBanner() {
   banner.className = syncInfo.remoteEnabled ? 'sync-banner ok' : 'sync-banner';
   banner.textContent = syncInfo.remoteEnabled
     ? `Đang dùng lưu trữ online chung${syncInfo.meta?.updatedAt ? ` · Đồng bộ gần nhất: ${formatDateTime(syncInfo.meta.updatedAt)}` : ''}`
-    : 'Dữ liệu hiện chỉ lưu trên máy này.';
+    : 'Ứng dụng đang hiển thị dữ liệu cục bộ trên máy này.';
 }
 
 function render() {
@@ -269,18 +282,25 @@ function fillRemainingPayment(playerId, amount) {
 async function commitSharedMutation(mutator, options = {}) {
   if (isSaving) return false;
 
-  const previousState = core.cloneState(state);
-  mutator();
-  core.syncDefaultPlayers(state);
-  store.saveUiState(state);
+  const nextState = core.cloneState(state);
+  mutator(nextState);
+  core.syncDefaultPlayers(nextState);
+  store.saveUiState(nextState);
   isSaving = true;
-  renderSyncBanner();
   render();
 
   try {
-    const result = await store.saveSharedState(state);
+    const result = await store.saveSharedState(nextState);
     state = result.state;
-    syncInfo = result.sync;
+    syncInfo = {
+      ...result.sync,
+      tone: 'ok',
+      notice: options.savedNotice || 'Đã lưu online'
+    };
+    if (typeof options.afterSuccess === 'function') {
+      options.afterSuccess();
+    }
+    store.saveUiState(state);
     render();
     if (options.successMessage) {
       showToast(options.successMessage);
@@ -289,10 +309,9 @@ async function commitSharedMutation(mutator, options = {}) {
     }
     return true;
   } catch (error) {
-    state = previousState;
-    store.saveUiState(state);
     syncInfo = {
       ...syncInfo,
+      tone: 'warn',
       notice: error instanceof Error ? error.message : 'Không lưu được dữ liệu online.'
     };
     render();
@@ -300,7 +319,6 @@ async function commitSharedMutation(mutator, options = {}) {
     return false;
   } finally {
     isSaving = false;
-    renderSyncBanner();
     render();
   }
 }
@@ -325,8 +343,8 @@ async function addPayment(event) {
   }
 
   const paidAt = localPaidAt ? new Date(localPaidAt).toISOString() : new Date().toISOString();
-  const success = await commitSharedMutation(() => {
-    state.payments.push({
+  const success = await commitSharedMutation((draftState) => {
+    draftState.payments.push({
       id: core.uid(),
       playerId,
       amount,
@@ -350,8 +368,8 @@ async function deletePayment(paymentId) {
   if (isSaving) return;
   if (!confirm('Xóa khoản đã đóng này?')) return;
 
-  await commitSharedMutation(() => {
-    state.payments = state.payments.filter(payment => payment.id !== paymentId);
+  await commitSharedMutation((draftState) => {
+    draftState.payments = draftState.payments.filter(payment => payment.id !== paymentId);
   }, {
     successMessage: 'Đã xóa khoản đã đóng.',
     errorMessage: 'Không xóa được khoản đã đóng.'
@@ -368,8 +386,8 @@ async function clearPayments() {
 
   if (!confirm('Xóa toàn bộ lịch sử tiền đã đóng? Dữ liệu séc thua vẫn được giữ nguyên.')) return;
 
-  await commitSharedMutation(() => {
-    state.payments = [];
+  await commitSharedMutation((draftState) => {
+    draftState.payments = [];
   }, {
     successMessage: 'Đã xóa toàn bộ lịch sử đã đóng.',
     errorMessage: 'Không xóa được lịch sử đã đóng.'
@@ -381,12 +399,17 @@ async function init() {
   $('#paymentForm').addEventListener('submit', addPayment);
   $('#btnClearPayments').addEventListener('click', clearPayments);
 
+  const cached = store.readCachedAppState();
+  state = cached.state;
+  syncInfo = cached.sync;
+  render();
+
   const initial = await store.loadAppState();
   state = initial.state;
   syncInfo = initial.sync;
   render();
 
-  if (syncInfo.notice) {
+  if (syncInfo.notice && syncInfo.tone !== 'busy') {
     showToast(syncInfo.notice);
   }
 }

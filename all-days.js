@@ -8,6 +8,7 @@ let syncInfo = {
   remoteEnabled: false,
   source: 'default',
   notice: '',
+  tone: 'warn',
   meta: null
 };
 let toastTimer = null;
@@ -99,8 +100,20 @@ function renderSyncBanner() {
   const banner = $('#syncBanner');
   if (!banner) return;
 
-  if (syncInfo.notice) {
+  if (syncInfo.tone === 'busy' && syncInfo.notice) {
+    banner.className = 'sync-banner busy';
+    banner.textContent = syncInfo.notice;
+    return;
+  }
+
+  if (syncInfo.tone === 'warn' && syncInfo.notice) {
     banner.className = 'sync-banner warn';
+    banner.textContent = syncInfo.notice;
+    return;
+  }
+
+  if (syncInfo.tone === 'ok' && syncInfo.notice) {
+    banner.className = 'sync-banner ok';
     banner.textContent = syncInfo.notice;
     return;
   }
@@ -108,7 +121,7 @@ function renderSyncBanner() {
   banner.className = syncInfo.remoteEnabled ? 'sync-banner ok' : 'sync-banner';
   banner.textContent = syncInfo.remoteEnabled
     ? `Đang dùng lưu trữ online chung${syncInfo.meta?.updatedAt ? ` · Đồng bộ gần nhất: ${formatDateTime(syncInfo.meta.updatedAt)}` : ''}`
-    : 'Dữ liệu hiện chỉ lưu trên máy này.';
+    : 'Ứng dụng đang hiển thị dữ liệu cục bộ trên máy này.';
 }
 
 function render() {
@@ -231,12 +244,17 @@ function renderDaysSummary(dates) {
 }
 
 async function init() {
+  const cached = store.readCachedAppState();
+  state = cached.state;
+  syncInfo = cached.sync;
+  render();
+
   const initial = await store.loadAppState();
   state = initial.state;
   syncInfo = initial.sync;
   render();
 
-  if (syncInfo.notice) {
+  if (syncInfo.notice && syncInfo.tone !== 'busy') {
     showToast(syncInfo.notice);
   }
 }

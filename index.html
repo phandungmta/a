@@ -51,10 +51,6 @@
       <section class="panel">
         <h2>Dữ liệu</h2>
         <div class="button-grid">
-          <label class="btn file-btn">
-            Nhập JSON
-            <input id="importJson" type="file" accept="application/json,.json" />
-          </label>
           <a class="btn" href="all-days.html">Tổng hợp tất cả ngày</a>
           <a class="btn" href="payments.html">Tiền đã đóng</a>
           <button id="btnClearDate" class="btn danger-light span-2" type="button">Xóa dữ liệu ngày này</button>
@@ -85,6 +81,7 @@
   </template>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <input id="importJson" type="file" accept="application/json,.json" hidden />
   <script src="app-config.js"></script>
   <script src="shared-state.js"></script>
   <script src="remote-store.js"></script>

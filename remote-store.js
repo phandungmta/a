@@ -73,6 +73,14 @@
     );
   }
 
+  function persistConfirmedState(state) {
+    persistLegacyMirror(state);
+    writeJsonStorage(
+      core.SHARED_CACHE_KEY,
+      buildCacheEnvelope(core.extractSharedState(state))
+    );
+  }
+
   function loadCachedSharedState() {
     const cached = readJsonStorage(core.SHARED_CACHE_KEY);
     return core.normalizeSharedState(cached && cached.state ? cached.state : cached);
@@ -80,7 +88,62 @@
 
   function saveUiState(state) {
     writeJsonStorage(core.UI_STORAGE_KEY, core.extractUiState(state));
-    persistLegacyMirror(state);
+  }
+
+  function buildSync(overrides) {
+    return {
+      remoteEnabled: hasRemoteBridge(),
+      bridgeUrl: config.bridgeUrl,
+      bridgeOrigin: getRemoteOrigin(),
+      source: 'default',
+      notice: '',
+      tone: hasRemoteBridge() ? 'ok' : 'warn',
+      meta: null,
+      ...(overrides || {})
+    };
+  }
+
+  function readLocalStateSources() {
+    const storedUi = readJsonStorage(core.UI_STORAGE_KEY);
+    const legacy = core.loadLegacyState(root.localStorage);
+    const legacyShared = core.extractSharedState(legacy);
+    const cachedShared = loadCachedSharedState();
+    const ui = core.normalizeUiState(storedUi || legacy);
+
+    return {
+      legacyShared: legacyShared,
+      cachedShared: cachedShared,
+      ui: ui
+    };
+  }
+
+  function pickBestLocalSharedState(cachedShared, legacyShared) {
+    if (core.hasMeaningfulSharedData(cachedShared)) {
+      return {
+        shared: cachedShared,
+        source: 'cache'
+      };
+    }
+
+    if (core.hasMeaningfulSharedData(legacyShared)) {
+      return {
+        shared: legacyShared,
+        source: 'legacy'
+      };
+    }
+
+    return {
+      shared: core.defaultSharedState(),
+      source: 'default'
+    };
+  }
+
+  function finalizeLoadedState(shared, ui) {
+    const state = core.buildState(shared, ui);
+    core.syncDefaultPlayers(state);
+    saveUiState(state);
+    persistConfirmedState(state);
+    return state;
   }
 
   function delay(milliseconds) {
@@ -211,21 +274,13 @@
   }
 
   async function loadAppState() {
-    const storedUi = readJsonStorage(core.UI_STORAGE_KEY);
-    const legacy = core.loadLegacyState(root.localStorage);
-    const legacyShared = core.extractSharedState(legacy);
-    const cachedShared = loadCachedSharedState();
-    const ui = core.normalizeUiState(storedUi || legacy);
+    const local = readLocalStateSources();
+    const legacyShared = local.legacyShared;
+    const cachedShared = local.cachedShared;
+    const ui = local.ui;
 
     let shared = null;
-    let sync = {
-      remoteEnabled: hasRemoteBridge(),
-      bridgeUrl: config.bridgeUrl,
-      bridgeOrigin: getRemoteOrigin(),
-      source: 'default',
-      notice: '',
-      meta: null
-    };
+    let sync = buildSync();
 
     if (hasRemoteBridge()) {
       try {
@@ -236,72 +291,87 @@
         if (!remoteHasData && core.hasMeaningfulSharedData(legacyShared)) {
           const seeded = await saveRemoteState(legacyShared);
           shared = core.normalizeSharedState(seeded.state || legacyShared);
-          sync = {
-            ...sync,
+          sync = buildSync({
             source: 'migrated',
+            tone: 'ok',
             notice: 'Đã chuyển dữ liệu cũ trên máy này lên lưu trữ online.',
             meta: seeded.meta || null
-          };
+          });
         } else {
           shared = remoteShared;
-          sync = {
-            ...sync,
+          sync = buildSync({
             source: 'remote',
+            tone: 'ok',
             meta: remote.meta || null
-          };
+          });
         }
-
-        writeJsonStorage(core.SHARED_CACHE_KEY, buildCacheEnvelope(shared));
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const fallback = pickBestLocalSharedState(cachedShared, legacyShared);
 
-        if (core.hasMeaningfulSharedData(cachedShared)) {
-          shared = cachedShared;
-          sync = {
-            ...sync,
+        if (fallback.source === 'cache') {
+          shared = fallback.shared;
+          sync = buildSync({
             source: 'cache',
-            notice: 'Không kết nối được lưu trữ online: ' + message
-              + ' Ứng dụng đang hiển thị bản cache trên máy này.'
-          };
-        } else if (core.hasMeaningfulSharedData(legacyShared)) {
-          shared = legacyShared;
-          sync = {
-            ...sync,
+            tone: 'warn',
+            notice: 'Không kết nối được lưu trữ online. Ứng dụng đang hiển thị bản cache trên máy này.'
+          });
+        } else if (fallback.source === 'legacy') {
+          shared = fallback.shared;
+          sync = buildSync({
             source: 'legacy',
-            notice: 'Không kết nối được lưu trữ online: ' + message
-              + ' Ứng dụng đang hiển thị dữ liệu cũ trên máy này.'
-          };
+            tone: 'warn',
+            notice: 'Không kết nối được lưu trữ online. Ứng dụng đang hiển thị dữ liệu cũ trên máy này.'
+          });
         } else {
           shared = core.defaultSharedState();
-          sync = {
-            ...sync,
+          sync = buildSync({
             source: 'default',
-            notice: message
-          };
+            tone: 'warn',
+            notice: error instanceof Error ? error.message : String(error)
+          });
         }
       }
     } else {
-      shared = core.hasMeaningfulSharedData(legacyShared) ? legacyShared : cachedShared;
-      if (!core.hasMeaningfulSharedData(shared)) {
-        shared = core.defaultSharedState();
-      }
+      const fallback = pickBestLocalSharedState(cachedShared, legacyShared);
+      shared = fallback.shared;
+      sync = buildSync({
+        source: fallback.source,
+        tone: 'warn',
+        notice: 'Chưa cấu hình URL Google Apps Script. Ứng dụng chỉ có thể hiển thị dữ liệu cục bộ trên máy này.'
+      });
+    }
 
-      sync = {
-        ...sync,
-        source: core.hasMeaningfulSharedData(legacyShared)
-          ? 'legacy'
-          : (core.hasMeaningfulSharedData(cachedShared) ? 'cache' : 'default'),
-        notice: 'Chưa cấu hình URL Google Apps Script. Dữ liệu hiện chỉ lưu trên máy này.'
+    const state = finalizeLoadedState(shared, ui);
+
+    return { state: state, sync: sync };
+  }
+
+  function readCachedAppState() {
+    const local = readLocalStateSources();
+    const fallback = pickBestLocalSharedState(local.cachedShared, local.legacyShared);
+    const state = finalizeLoadedState(fallback.shared, local.ui);
+
+    if (hasRemoteBridge()) {
+      return {
+        state: state,
+        sync: buildSync({
+          source: fallback.source,
+          tone: 'busy',
+          notice: fallback.source === 'default'
+            ? 'Đang tải dữ liệu online...'
+            : 'Đang dùng bản cache, đang kết nối lưu trữ online...'
+        })
       };
     }
 
-    const state = core.buildState(shared, ui);
-    core.syncDefaultPlayers(state);
-    saveUiState(state);
-    persistLegacyMirror(state);
-    writeJsonStorage(core.SHARED_CACHE_KEY, buildCacheEnvelope(core.extractSharedState(state)));
-
-    return { state: state, sync: sync };
+    return {
+      state: state,
+      sync: buildSync({
+        source: fallback.source,
+        tone: 'warn',
+        notice: 'Chưa cấu hình URL Google Apps Script. Ứng dụng chỉ có thể hiển thị dữ liệu cục bộ trên máy này.'
+      })
+    };
   }
 
   async function saveSharedState(state) {
@@ -311,24 +381,9 @@
     );
     core.syncDefaultPlayers(nextState);
     saveUiState(nextState);
-    persistLegacyMirror(nextState);
-    writeJsonStorage(
-      core.SHARED_CACHE_KEY,
-      buildCacheEnvelope(core.extractSharedState(nextState))
-    );
 
     if (!hasRemoteBridge()) {
-      return {
-        state: nextState,
-        sync: {
-          remoteEnabled: false,
-          bridgeUrl: config.bridgeUrl,
-          bridgeOrigin: getRemoteOrigin(),
-          source: 'legacy',
-          notice: 'Chưa cấu hình URL Google Apps Script. Đã lưu tạm trên máy này.',
-          meta: null
-        }
-      };
+      throw new Error('Chưa cấu hình URL Google Apps Script.');
     }
 
     const saved = await saveRemoteState(core.extractSharedState(nextState));
@@ -342,28 +397,23 @@
 
     core.syncDefaultPlayers(mergedState);
     saveUiState(mergedState);
-    persistLegacyMirror(mergedState);
-    writeJsonStorage(
-      core.SHARED_CACHE_KEY,
-      buildCacheEnvelope(core.extractSharedState(mergedState))
-    );
+    persistConfirmedState(mergedState);
 
     return {
       state: mergedState,
-      sync: {
-        remoteEnabled: true,
-        bridgeUrl: config.bridgeUrl,
-        bridgeOrigin: getRemoteOrigin(),
+      sync: buildSync({
         source: 'remote',
+        tone: 'ok',
         notice: '',
         meta: saved && saved.meta ? saved.meta : null
-      }
+      })
     };
   }
 
   root.VolleyballRemoteStore = {
     config: config,
     hasRemoteBridge: hasRemoteBridge,
+    readCachedAppState: readCachedAppState,
     loadAppState: loadAppState,
     saveSharedState: saveSharedState,
     saveUiState: saveUiState
