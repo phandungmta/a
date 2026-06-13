@@ -1,4 +1,6 @@
 (function (root) {
+  'use strict';
+
   const core = root.VolleyballAppState;
 
   if (!core) {
@@ -44,6 +46,7 @@
   let bridgeReadySeen = false;
   let bridgeTargetOrigin = '';
   let bridgeTargetWindow = null;
+  let bridgeProtocol = '';
   const pendingRequests = new Map();
 
   function getBridgeOrigin() {
@@ -61,7 +64,7 @@
   }
 
   function hasBridgeTarget() {
-    return Boolean(bridgeReadySeen && bridgeTargetOrigin);
+    return Boolean(bridgeReadySeen && bridgeTargetWindow);
   }
 
   function isGoogleAppsSandboxOrigin(origin) {
@@ -69,7 +72,9 @@
 
     try {
       const hostname = new URL(origin).hostname;
-      return hostname === 'script.googleusercontent.com' || hostname.endsWith('.script.googleusercontent.com');
+      return hostname === 'script.googleusercontent.com'
+        || hostname.endsWith('.script.googleusercontent.com')
+        || hostname === 'script.google.com';
     } catch {
       return false;
     }
@@ -98,7 +103,10 @@
   }
 
   function persistLegacyMirror(state) {
-    writeJsonStorage(core.LEGACY_STORAGE_KEY, core.buildState(core.extractSharedState(state), core.extractUiState(state)));
+    writeJsonStorage(
+      core.LEGACY_STORAGE_KEY,
+      core.buildState(core.extractSharedState(state), core.extractUiState(state))
+    );
   }
 
   function loadCachedSharedState() {
@@ -115,70 +123,32 @@
     if (bridgeFrame) return bridgeFrame;
 
     bridgeFrame = document.getElementById(config.bridgeIframeId);
-
     if (bridgeFrame) return bridgeFrame;
 
     bridgeFrame = document.createElement('iframe');
     bridgeFrame.id = config.bridgeIframeId;
-    bridgeFrame.src = config.bridgeUrl;
     bridgeFrame.title = 'Volleyball Tracker Bridge';
     bridgeFrame.setAttribute('aria-hidden', 'true');
     bridgeFrame.tabIndex = -1;
-    bridgeFrame.style.display = 'none';
+    bridgeFrame.style.position = 'fixed';
+    bridgeFrame.style.width = '1px';
+    bridgeFrame.style.height = '1px';
+    bridgeFrame.style.border = '0';
+    bridgeFrame.style.opacity = '0';
+    bridgeFrame.style.pointerEvents = 'none';
+    bridgeFrame.style.left = '-10000px';
+    bridgeFrame.style.top = '-10000px';
+
+    const separator = config.bridgeUrl.includes('?') ? '&' : '?';
+    bridgeFrame.src = `${config.bridgeUrl}${separator}parentOrigin=${encodeURIComponent(root.location.origin)}&ts=${Date.now()}`;
     document.body.appendChild(bridgeFrame);
 
     return bridgeFrame;
   }
 
   function cleanupPendingRequest(id, timer) {
-    if (timer) {
-      clearTimeout(timer);
-    }
-
+    if (timer) root.clearTimeout(timer);
     pendingRequests.delete(id);
-  }
-
-  function handleBridgeMessage(event) {
-    if (!isBridgeMessageOrigin(event.origin)) return;
-
-    const message = event.data || {};
-    if (message.namespace !== config.messageNamespace) return;
-
-    if (message.type === 'bridge-ready') {
-      bridgeReadySeen = true;
-      bridgeTargetOrigin = event.origin;
-      bridgeTargetWindow = tryGetEventSource(event) || bridgeTargetWindow;
-
-      clearBridgeReadyWaiters();
-
-      if (!bridgeReadyResolver) return;
-
-      const resolve = bridgeReadyResolver;
-      bridgeReadyResolver = null;
-      bridgeReadyRejecter = null;
-      resolve(ensureBridgeIframe());
-      return;
-    }
-
-    if (message.type !== 'bridge-response' || !message.id) return;
-
-    const pending = pendingRequests.get(message.id);
-    if (!pending) return;
-
-    cleanupPendingRequest(message.id, pending.timer);
-
-    if (message.ok) {
-      pending.resolve(message.payload || {});
-      return;
-    }
-
-    pending.reject(new Error(message.error || 'Bridge Apps Script trả về lỗi.'));
-  }
-
-  function attachBridgeListener() {
-    if (bridgeListenerAttached) return;
-    root.addEventListener('message', handleBridgeMessage);
-    bridgeListenerAttached = true;
   }
 
   function clearBridgeReadyWaiters() {
@@ -201,6 +171,126 @@
     }
   }
 
+  function isModernReady(message) {
+    return message
+      && message.namespace === config.messageNamespace
+      && message.type === 'bridge-ready';
+  }
+
+  function isLegacyReady(message) {
+    if (!message || typeof message !== 'object') return false;
+    const type = String(message.type || '').toUpperCase();
+    const action = String(message.action || '').toLowerCase();
+    return message.source === 'volleyball-bridge'
+      && (type === 'VOLLEYBALL_BRIDGE_READY' || action === 'ready');
+  }
+
+  function markBridgeReady(event, protocol) {
+    bridgeReadySeen = true;
+    bridgeProtocol = protocol || bridgeProtocol || 'modern';
+    bridgeTargetOrigin = event.origin || bridgeTargetOrigin || getBridgeOrigin();
+    bridgeTargetWindow = tryGetEventSource(event) || bridgeTargetWindow;
+
+    clearBridgeReadyWaiters();
+
+    if (!bridgeReadyResolver) return;
+    const resolve = bridgeReadyResolver;
+    bridgeReadyResolver = null;
+    bridgeReadyRejecter = null;
+    resolve(bridgeTargetWindow || ensureBridgeIframe().contentWindow);
+  }
+
+  function handleModernResponse(message) {
+    if (!message || message.namespace !== config.messageNamespace) return false;
+    if (message.type !== 'bridge-response' || !message.id) return false;
+
+    const pending = pendingRequests.get(message.id);
+    if (!pending) return true;
+
+    cleanupPendingRequest(message.id, pending.timer);
+
+    if (message.ok) {
+      pending.resolve(message.payload || {});
+    } else {
+      pending.reject(new Error(message.error || 'Bridge Apps Script trả về lỗi.'));
+    }
+
+    return true;
+  }
+
+  function handleLegacyResponse(message) {
+    if (!message || typeof message !== 'object') return false;
+
+    const requestId = message.requestId || message.id || '';
+    if (!requestId) return false;
+
+    const type = String(message.type || '').toUpperCase();
+    const action = String(message.action || '').toLowerCase();
+    const isLegacyMessage = message.source === 'volleyball-bridge'
+      || type.startsWith('VOLLEYBALL_')
+      || ['loaded', 'saved', 'load-error', 'save-error'].includes(action);
+
+    if (!isLegacyMessage) return false;
+
+    const pending = pendingRequests.get(requestId);
+    if (!pending) return true;
+
+    cleanupPendingRequest(requestId, pending.timer);
+
+    const failed = message.ok === false
+      || type === 'VOLLEYBALL_ERROR'
+      || action.endsWith('-error');
+
+    if (failed) {
+      pending.reject(new Error(message.error || 'Bridge Apps Script trả về lỗi.'));
+      return true;
+    }
+
+    if (pending.method === 'getState') {
+      pending.resolve({
+        state: message.state || message.data || null,
+        meta: message.meta || message.result || null
+      });
+      return true;
+    }
+
+    if (pending.method === 'saveState') {
+      pending.resolve({
+        state: pending.payload && pending.payload.state ? pending.payload.state : null,
+        meta: message.result || message.meta || null
+      });
+      return true;
+    }
+
+    pending.resolve(message.payload || message.result || {});
+    return true;
+  }
+
+  function handleBridgeMessage(event) {
+    if (!isBridgeMessageOrigin(event.origin)) return;
+
+    const message = event.data || {};
+
+    if (isModernReady(message)) {
+      markBridgeReady(event, 'modern');
+      return;
+    }
+
+    if (isLegacyReady(message)) {
+      markBridgeReady(event, 'legacy');
+      return;
+    }
+
+    if (handleModernResponse(message)) return;
+    handleLegacyResponse(message);
+  }
+
+  function attachBridgeListener() {
+    if (bridgeListenerAttached) return;
+    root.addEventListener('message', handleBridgeMessage);
+    bridgeListenerAttached = true;
+  }
+
   function appendBridgeChildTargets(targets, frameWindow, targetOrigin) {
     if (!frameWindow) return;
 
@@ -211,14 +301,9 @@
       for (let index = 0; index < childCount; index += 1) {
         const childWindow = childFrames[index];
         if (!childWindow) continue;
+        if (targets.some((entry) => entry.window === childWindow)) continue;
 
-        const exists = targets.some((entry) => entry.window === childWindow);
-        if (exists) continue;
-
-        targets.push({
-          window: childWindow,
-          origin: targetOrigin
-        });
+        targets.push({ window: childWindow, origin: targetOrigin });
         appendBridgeChildTargets(targets, childWindow, targetOrigin);
       }
     } catch {
@@ -228,26 +313,20 @@
 
   function getBridgeRequestTargets() {
     const targets = [];
-    const googleOrigin = bridgeTargetOrigin || getBridgeOrigin();
+    const targetOrigin = bridgeTargetOrigin || getBridgeOrigin();
 
     if (bridgeTargetWindow) {
-      targets.push({
-        window: bridgeTargetWindow,
-        origin: googleOrigin
-      });
+      targets.push({ window: bridgeTargetWindow, origin: targetOrigin });
     }
 
     const iframe = ensureBridgeIframe();
     const outerWindow = iframe.contentWindow;
 
     if (outerWindow && !targets.some((entry) => entry.window === outerWindow)) {
-      targets.push({
-        window: outerWindow,
-        origin: getBridgeOrigin()
-      });
+      targets.push({ window: outerWindow, origin: getBridgeOrigin() });
     }
 
-    appendBridgeChildTargets(targets, outerWindow, googleOrigin);
+    appendBridgeChildTargets(targets, outerWindow, targetOrigin);
     return targets;
   }
 
@@ -266,23 +345,22 @@
     bridgeSetupPromise = new Promise((resolve, reject) => {
       bridgeReadyResolver = resolve;
       bridgeReadyRejecter = reject;
+
       bridgeReadyTimer = root.setTimeout(() => {
         bridgeReadyResolver = null;
         bridgeReadyRejecter = null;
         clearBridgeReadyWaiters();
         bridgeSetupPromise = null;
-        reject(new Error('Bridge Apps Script không phản hồi.'));
+        reject(new Error('Bridge Apps Script không phản hồi. Hãy kiểm tra quyền triển khai Apps Script là “Anyone”.'));
       }, config.requestTimeoutMs);
 
       bridgeReadyPollTimer = root.setInterval(() => {
         if (!hasBridgeTarget() || !bridgeReadyResolver) return;
-
-        const resolveBridgeReady = bridgeReadyResolver;
-        bridgeReadyResolver = null;
-        bridgeReadyRejecter = null;
-        clearBridgeReadyWaiters();
-        resolveBridgeReady(bridgeTargetWindow);
-      }, 25);
+        markBridgeReady({
+          origin: bridgeTargetOrigin,
+          source: bridgeTargetWindow
+        }, bridgeProtocol || 'modern');
+      }, 50);
 
       ensureBridgeIframe();
     });
@@ -290,11 +368,55 @@
     return bridgeSetupPromise;
   }
 
+  function buildModernRequest(id, method, payload) {
+    return {
+      namespace: config.messageNamespace,
+      type: 'bridge-request',
+      id,
+      method,
+      payload: payload || {}
+    };
+  }
+
+  function buildLegacyRequest(id, method, payload) {
+    if (method === 'getState') {
+      return {
+        source: 'volleyball-tracker',
+        action: 'load',
+        type: 'load',
+        command: 'load',
+        requestId: id
+      };
+    }
+
+    if (method === 'saveState') {
+      const state = payload && payload.state ? payload.state : {};
+      return {
+        source: 'volleyball-tracker',
+        action: 'save',
+        type: 'save',
+        command: 'save',
+        requestId: id,
+        state,
+        data: state,
+        payload: state,
+        json: JSON.stringify(state)
+      };
+    }
+
+    return {
+      source: 'volleyball-tracker',
+      action: method,
+      type: method,
+      requestId: id,
+      payload: payload || {}
+    };
+  }
+
   async function callBridge(method, payload) {
     await ensureBridgeReady();
 
     const requestTargets = getBridgeRequestTargets();
-
     if (!requestTargets.length) {
       throw new Error('Không truy cập được cửa sổ bridge Apps Script.');
     }
@@ -306,21 +428,33 @@
         reject(new Error('Hết thời gian chờ phản hồi từ bridge Apps Script.'));
       }, config.requestTimeoutMs);
 
-      pendingRequests.set(id, { resolve, reject, timer });
+      pendingRequests.set(id, {
+        resolve,
+        reject,
+        timer,
+        method,
+        payload: payload || {}
+      });
 
+      const protocol = bridgeProtocol || 'modern';
+      const message = protocol === 'legacy'
+        ? buildLegacyRequest(id, method, payload)
+        : buildModernRequest(id, method, payload);
+
+      let sent = false;
       requestTargets.forEach(({ window: targetWindow, origin: targetOrigin }) => {
         try {
-          targetWindow.postMessage({
-            namespace: config.messageNamespace,
-            type: 'bridge-request',
-            id,
-            method,
-            payload: payload || {}
-          }, targetOrigin);
+          targetWindow.postMessage(message, targetOrigin || '*');
+          sent = true;
         } catch {
           // Keep trying other known bridge windows.
         }
       });
+
+      if (!sent) {
+        cleanupPendingRequest(id, timer);
+        reject(new Error('Không gửi được yêu cầu tới bridge Apps Script.'));
+      }
     });
   }
 
@@ -344,24 +478,24 @@
     if (hasRemoteBridge()) {
       try {
         const remote = await callBridge('getState');
-        const remoteShared = core.normalizeSharedState(remote.state);
+        const remoteShared = core.normalizeSharedState(remote && remote.state);
         const remoteHasData = core.hasMeaningfulSharedData(remoteShared);
 
         if (!remoteHasData && core.hasMeaningfulSharedData(legacyShared)) {
           const seeded = await callBridge('saveState', { state: legacyShared });
-          shared = core.normalizeSharedState(seeded.state);
+          shared = core.normalizeSharedState((seeded && seeded.state) || legacyShared);
           sync = {
             ...sync,
             source: 'migrated',
             notice: 'Đã chuyển dữ liệu cũ trên máy này lên lưu trữ online.',
-            meta: seeded.meta || null
+            meta: seeded && seeded.meta ? seeded.meta : null
           };
         } else {
           shared = remoteShared;
           sync = {
             ...sync,
             source: 'remote',
-            meta: remote.meta || null
+            meta: remote && remote.meta ? remote.meta : null
           };
         }
 
@@ -372,14 +506,14 @@
           sync = {
             ...sync,
             source: 'cache',
-            notice: 'Không kết nối được lưu trữ online. Ứng dụng đang hiển thị bản cache trên máy này.'
+            notice: `Không kết nối được lưu trữ online: ${error instanceof Error ? error.message : String(error)} Ứng dụng đang hiển thị bản cache trên máy này.`
           };
         } else if (core.hasMeaningfulSharedData(legacyShared)) {
           shared = legacyShared;
           sync = {
             ...sync,
             source: 'legacy',
-            notice: 'Không kết nối được lưu trữ online. Ứng dụng đang hiển thị dữ liệu cũ trên máy này.'
+            notice: `Không kết nối được lưu trữ online: ${error instanceof Error ? error.message : String(error)} Ứng dụng đang hiển thị dữ liệu cũ trên máy này.`
           };
         } else {
           shared = core.defaultSharedState();
@@ -392,13 +526,13 @@
       }
     } else {
       shared = core.hasMeaningfulSharedData(legacyShared) ? legacyShared : cachedShared;
-      if (!core.hasMeaningfulSharedData(shared)) {
-        shared = core.defaultSharedState();
-      }
+      if (!core.hasMeaningfulSharedData(shared)) shared = core.defaultSharedState();
 
       sync = {
         ...sync,
-        source: core.hasMeaningfulSharedData(legacyShared) ? 'legacy' : (core.hasMeaningfulSharedData(cachedShared) ? 'cache' : 'default'),
+        source: core.hasMeaningfulSharedData(legacyShared)
+          ? 'legacy'
+          : (core.hasMeaningfulSharedData(cachedShared) ? 'cache' : 'default'),
         notice: 'Chưa cấu hình bridge Apps Script. Dữ liệu hiện chỉ lưu trên máy này.'
       };
     }
@@ -416,11 +550,10 @@
     const nextState = core.buildState(core.extractSharedState(state), core.extractUiState(state));
     core.syncDefaultPlayers(nextState);
     saveUiState(nextState);
+    writeJsonStorage(core.SHARED_CACHE_KEY, buildCacheEnvelope(core.extractSharedState(nextState)));
 
     if (!hasRemoteBridge()) {
-      writeJsonStorage(core.SHARED_CACHE_KEY, buildCacheEnvelope(core.extractSharedState(nextState)));
       persistLegacyMirror(nextState);
-
       return {
         state: nextState,
         sync: {
@@ -434,8 +567,13 @@
       };
     }
 
-    const saved = await callBridge('saveState', { state: core.extractSharedState(nextState) });
-    const mergedState = core.buildState(saved.state, nextState);
+    const saved = await callBridge('saveState', {
+      state: core.extractSharedState(nextState)
+    });
+    const savedShared = saved && saved.state
+      ? saved.state
+      : core.extractSharedState(nextState);
+    const mergedState = core.buildState(savedShared, core.extractUiState(nextState));
     core.syncDefaultPlayers(mergedState);
     saveUiState(mergedState);
     persistLegacyMirror(mergedState);
@@ -449,7 +587,7 @@
         bridgeOrigin: getBridgeOrigin(),
         source: 'remote',
         notice: '',
-        meta: saved.meta || null
+        meta: saved && saved.meta ? saved.meta : null
       }
     };
   }
