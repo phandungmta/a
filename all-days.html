@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tổng hợp tất cả các ngày - Sổ thua séc bóng chuyền</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Volleyball Set Loser Tracker</p>
+      <h1>Tổng hợp tất cả các ngày</h1>
+      <p class="subtitle">Trang này cộng toàn bộ các séc đã lưu ở mọi ngày, tự tính số séc thua và tổng tiền / điểm của từng người.</p>
+      <nav class="page-nav" aria-label="Điều hướng">
+        <a class="nav-link" href="index.html">Nhập séc theo ngày</a>
+        <a class="nav-link active" href="all-days.html">Tổng hợp tất cả các ngày</a>
+        <a class="nav-link" href="payments.html">Tiền đã đóng / còn lại</a>
+      </nav>
+    </div>
+    <div class="header-actions">
+      <a class="btn ghost" href="index.html">Quay lại nhập séc</a>
+    </div>
+  </header>
+
+  <section class="sync-shell">
+    <div id="syncBanner" class="sync-banner"></div>
+  </section>
+
+  <main class="single-layout">
+    <section class="summary-grid" id="allSummaryGrid"></section>
+
+    <section class="panel final-summary" id="playersAllSummary"></section>
+
+    <section class="panel final-summary" id="daysSummary"></section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app-config.js"></script>
+  <script src="shared-state.js"></script>
+  <script src="remote-store.js"></script>
+  <script src="all-days.js"></script>
+</body>
+</html>

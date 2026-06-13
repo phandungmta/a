@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <script>
+      const MESSAGE_NAMESPACE = 'volleyball-tracker';
+      const allowedOrigins = <?!= allowedOriginsJson ?>;
+
+      function isAllowedOrigin(origin) {
+        return allowedOrigins.indexOf(origin) >= 0;
+      }
+
+      function respond(targetWindow, targetOrigin, id, ok, payload, error) {
+        targetWindow.postMessage({
+          namespace: MESSAGE_NAMESPACE,
+          type: 'bridge-response',
+          id: id,
+          ok: ok,
+          payload: payload || null,
+          error: error || ''
+        }, targetOrigin);
+      }
+
+      function callServer(method, payload, targetWindow, targetOrigin, id) {
+        if (typeof google === 'undefined' || !google.script || !google.script.run) {
+          respond(targetWindow, targetOrigin, id, false, null, 'google.script.run không khả dụng.');
+          return;
+        }
+
+        const runner = google.script.run
+          .withSuccessHandler(function (result) {
+            respond(targetWindow, targetOrigin, id, true, result, '');
+          })
+          .withFailureHandler(function (error) {
+            const message = error && error.message ? error.message : String(error || 'Lỗi Apps Script không xác định.');
+            respond(targetWindow, targetOrigin, id, false, null, message);
+          });
+
+        if (method === 'ping') {
+          runner.ping();
+          return;
+        }
+
+        if (method === 'getState') {
+          runner.getState();
+          return;
+        }
+
+        if (method === 'saveState') {
+          runner.saveState(payload || {});
+          return;
+        }
+
+        respond(targetWindow, targetOrigin, id, false, null, 'Phương thức bridge không hợp lệ.');
+      }
+
+      window.addEventListener('message', function (event) {
+        const message = event.data || {};
+
+        if (!isAllowedOrigin(event.origin)) return;
+        if (message.namespace !== MESSAGE_NAMESPACE) return;
+        if (message.type !== 'bridge-request') return;
+        if (!message.id || !message.method) return;
+
+        callServer(message.method, message.payload || {}, event.source, event.origin, message.id);
+      });
+
+      window.addEventListener('load', function () {
+        if (!window.parent || window.parent === window) return;
+
+        window.parent.postMessage({
+          namespace: MESSAGE_NAMESPACE,
+          type: 'bridge-ready'
+        }, '*');
+      });
+    </script>
+  </head>
+  <body></body>
+</html>

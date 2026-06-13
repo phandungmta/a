@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tiền đã đóng / còn lại - Sổ thua séc bóng chuyền</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Volleyball Set Loser Tracker</p>
+      <h1>Tiền đã đóng / còn lại</h1>
+      <p class="subtitle">Trang này lấy tổng tiền phải đóng từ toàn bộ séc thua, sau đó trừ các khoản đã đóng để ra số tiền còn lại của từng người.</p>
+      <nav class="page-nav" aria-label="Điều hướng">
+        <a class="nav-link" href="index.html">Nhập séc theo ngày</a>
+        <a class="nav-link" href="all-days.html">Tổng hợp tất cả các ngày</a>
+        <a class="nav-link active" href="payments.html">Tiền đã đóng / còn lại</a>
+      </nav>
+    </div>
+    <div class="header-actions">
+      <a class="btn ghost" href="index.html">Quay lại nhập séc</a>
+    </div>
+  </header>
+
+  <section class="sync-shell">
+    <div id="syncBanner" class="sync-banner"></div>
+  </section>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <section class="panel">
+        <h2>Ghi tiền đã đóng</h2>
+        <form id="paymentForm" class="stack-form">
+          <label class="field-label">
+            Người đã đóng
+            <select id="paymentPlayer" required></select>
+          </label>
+          <label class="field-label">
+            Số tiền / điểm đã đóng
+            <input id="paymentAmount" type="number" min="0" step="1000" placeholder="Ví dụ: 50000" required />
+          </label>
+          <label class="field-label">
+            Thời gian đóng
+            <input id="paymentAt" type="datetime-local" />
+          </label>
+          <label class="field-label">
+            Ghi chú, có thể bỏ trống
+            <input id="paymentNote" type="text" placeholder="Ví dụ: chuyển khoản, tiền mặt..." autocomplete="off" />
+          </label>
+          <button class="btn primary full" type="submit">+ Lưu khoản đã đóng</button>
+        </form>
+        <p class="help">Có thể ghi nhiều lần cho cùng một người. Hệ thống sẽ cộng tất cả khoản đã đóng và tự tính còn lại.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Dữ liệu công nợ</h2>
+        <div class="button-grid">
+          <a class="btn" href="all-days.html">Tổng hợp tất cả ngày</a>
+          <button id="btnClearPayments" class="btn danger-light span-2" type="button">Xóa toàn bộ lịch sử đã đóng</button>
+        </div>
+        <p class="help">Dữ liệu tiền đã đóng được lưu cùng trạng thái chung trong trình duyệt.</p>
+      </section>
+    </aside>
+
+    <section class="content">
+      <section class="summary-grid" id="paymentSummaryGrid"></section>
+      <section class="panel final-summary" id="paymentTable"></section>
+      <section class="panel final-summary" id="paymentHistory"></section>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app-config.js"></script>
+  <script src="shared-state.js"></script>
+  <script src="remote-store.js"></script>
+  <script src="payments.js"></script>
+</body>
+</html>

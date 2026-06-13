@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sổ thua séc bóng chuyền</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Volleyball Set Loser Tracker</p>
+      <h1>Sổ thua séc bóng chuyền</h1>
+      <p class="subtitle">Mỗi lần chọn người thua và bấm lưu sẽ được tính là 1 séc. Không cần nhập tên trận, không cần chọn đội.</p>
+      <nav class="page-nav" aria-label="Điều hướng">
+        <a class="nav-link active" href="index.html">Nhập séc theo ngày</a>
+        <a class="nav-link" href="all-days.html">Tổng hợp tất cả các ngày</a>
+        <a class="nav-link" href="payments.html">Tiền đã đóng / còn lại</a>
+      </nav>
+    </div>
+    <div class="header-actions">
+      <label class="date-filter">
+        Ngày đang xem
+        <input type="date" id="currentDate" />
+      </label>
+      <button id="btnToday" class="btn ghost" type="button">Hôm nay</button>
+    </div>
+  </header>
+
+  <section class="sync-shell">
+    <div id="syncBanner" class="sync-banner"></div>
+  </section>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <section class="panel">
+        <h2>Chọn người thua</h2>
+        <label class="field-label">
+          Tiền / điểm mỗi người thua trong 1 séc
+          <input id="stakeInput" type="number" min="0" step="1000" placeholder="Ví dụ: 10000" />
+        </label>
+        <label class="field-label">
+          Ghi chú séc, có thể bỏ trống
+          <input id="setNote" type="text" placeholder="Ví dụ: séc 1, sân 2..." autocomplete="off" />
+        </label>
+        <div id="losersList" class="check-list empty-state-small"></div>
+        <button id="btnSaveSet" class="btn primary full" type="button">Lưu 1 séc</button>
+        <p class="help">Các người đang được tích sẽ được lưu là người thua của séc mới. Sau khi lưu, bảng tổng hợp cuối cùng tự cộng.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Dữ liệu</h2>
+        <div class="button-grid">
+          <label class="btn file-btn">
+            Nhập JSON
+            <input id="importJson" type="file" accept="application/json,.json" />
+          </label>
+          <a class="btn" href="all-days.html">Tổng hợp tất cả ngày</a>
+          <a class="btn" href="payments.html">Tiền đã đóng</a>
+          <button id="btnClearDate" class="btn danger-light span-2" type="button">Xóa dữ liệu ngày này</button>
+        </div>
+        <p class="help">Khi bridge Apps Script đã được cấu hình, dữ liệu sẽ lưu chung online trong Google Sheets và xem được từ mọi máy.</p>
+      </section>
+    </aside>
+
+    <section class="content">
+      <section class="summary-grid" id="summaryGrid"></section>
+      <section id="finalSummary" class="panel final-summary"></section>
+      <section id="setsContainer" class="sets-history"></section>
+    </section>
+  </main>
+
+  <template id="setRowTemplate">
+    <article class="set-card">
+      <div>
+        <h3></h3>
+        <p class="set-meta"></p>
+        <p class="set-losers"></p>
+      </div>
+      <div class="set-actions">
+        <button class="btn small edit-set" type="button">Sửa</button>
+        <button class="btn small danger-light delete-set" type="button">Xóa</button>
+      </div>
+    </article>
+  </template>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app-config.js"></script>
+  <script src="shared-state.js"></script>
+  <script src="remote-store.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
