@@ -2,17 +2,22 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1d4ed8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="format-detection" content="telephone=no" />
   <title>Sổ thua séc bóng chuyền</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="mobile.css" />
 </head>
-<body>
+<body class="page-entry">
   <header class="app-header">
     <div>
       <p class="eyebrow">Bóng chuyền VKT</p>
       <h1>Sổ thua bóng chuyền</h1>
       <nav class="page-nav" aria-label="Điều hướng">
-        <a class="nav-link active" href="index.html">Nhập séc theo ngày</a>
+        <a class="nav-link active" href="index.html" aria-current="page">Nhập séc theo ngày</a>
         <a class="nav-link" href="all-days.html">Tổng hợp tất cả các ngày</a>
         <a class="nav-link" href="payments.html">Tiền đã đóng / còn lại</a>
       </nav>
@@ -36,7 +41,7 @@
         <h2>Chọn người thua</h2>
         <label class="field-label">
           Tiền / điểm mỗi người thua trong 1 séc
-          <input id="stakeInput" type="number" min="0" step="1000" placeholder="Ví dụ: 10000" />
+          <input id="stakeInput" type="number" min="0" step="1000" inputmode="numeric" placeholder="Ví dụ: 10000" />
         </label>
         <label class="field-label">
           Ghi chú séc, có thể bỏ trống
@@ -52,7 +57,7 @@
           <a class="btn" href="all-days.html">Tổng hợp tất cả ngày</a>
           <a class="btn" href="payments.html">Tiền đã đóng</a>
           <button id="btnClearDate" class="btn danger-light span-2" type="button">Xóa dữ liệu ngày này</button>
-        </div> 
+        </div>
       </section>
     </aside>
 

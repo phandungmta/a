@@ -2,18 +2,23 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1d4ed8" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="format-detection" content="telephone=no" />
   <title>Tổng hợp tất cả các ngày - Sổ thua séc bóng chuyền</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="mobile.css" />
 </head>
-<body>
+<body class="page-all-days">
   <header class="app-header">
     <div>
       <p class="eyebrow">Bóng chuyền VKT</p>
       <h1>Tổng hợp tất cả các ngày</h1>
       <nav class="page-nav" aria-label="Điều hướng">
         <a class="nav-link" href="index.html">Nhập séc theo ngày</a>
-        <a class="nav-link active" href="all-days.html">Tổng hợp tất cả các ngày</a>
+        <a class="nav-link active" href="all-days.html" aria-current="page">Tổng hợp tất cả các ngày</a>
         <a class="nav-link" href="payments.html">Tiền đã đóng / còn lại</a>
       </nav>
     </div>
@@ -28,9 +33,7 @@
 
   <main class="single-layout">
     <section class="summary-grid" id="allSummaryGrid"></section>
-
     <section class="panel final-summary" id="playersAllSummary"></section>
-
     <section class="panel final-summary" id="daysSummary"></section>
   </main>
 

@@ -811,65 +811,154 @@ input[type="datetime-local"]:focus {
     border-radius: 16px;
     font-size: 13px;
   }
+}
 
-  .mobile-order-entry,
-  .mobile-order-summary-table {
-    padding: 14px 12px;
+/* ============================================================
+   iOS / iPhone Safari — specific fixes
+   ============================================================ */
+
+/*
+ * 1. Chống iOS tự zoom khi focus input
+ *    Safari zoom in khi font-size < 16px — buộc 16px trên mobile
+ */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="email"],
+  input[type="tel"],
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/*
+ * 2. Tắt viền xanh khi chạm vào button/link trên iOS
+ */
+.btn,
+.nav-link,
+button,
+a,
+label,
+.check-item label {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * 3. Cuộn ngang mượt hơn cho bảng trên iOS (momentum scrolling)
+ */
+.table-wrap {
+  -webkit-overflow-scrolling: touch;
+}
+
+/*
+ * 4. Safe area insets — hỗ trợ Dynamic Island / notch và thanh Home
+ *    Cần có viewport-fit=cover trong thẻ meta để có tác dụng
+ */
+@supports (padding: env(safe-area-inset-bottom)) {
+  /* Đẩy nội dung trang tránh thanh Home ở đáy màn hình */
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
-  .mobile-order-entry h2,
-  .mobile-order-summary-table h2 {
-    font-size: 20px;
+  /* Toast cố định không bị che bởi thanh Home */
+  .toast {
+    bottom: calc(18px + env(safe-area-inset-bottom));
   }
 
-  .mobile-order-entry .check-item {
-    min-height: 66px;
-    padding: 12px 12px;
+  /* Toast toàn màn hình trên mobile không bị che */
+  @media (max-width: 560px) {
+    .toast {
+      left: max(14px, env(safe-area-inset-left));
+      right: max(14px, env(safe-area-inset-right));
+      bottom: calc(14px + env(safe-area-inset-bottom));
+    }
+  }
+}
+
+@supports (padding: env(safe-area-inset-left)) {
+  /* Padding ngang tránh vùng bo góc / vùng cảm ứng cạnh màn hình */
+  @media (max-width: 920px) {
+    .app-header {
+      padding-left: max(14px, env(safe-area-inset-left));
+      padding-right: max(14px, env(safe-area-inset-right));
+    }
+
+    .layout,
+    .single-layout,
+    .sync-shell {
+      padding-left: max(14px, env(safe-area-inset-left));
+      padding-right: max(14px, env(safe-area-inset-right));
+    }
   }
 
-  .mobile-order-entry .check-item span {
-    font-size: 15px;
-    line-height: 1.25;
-  }
+  @media (max-width: 430px) {
+    .app-header {
+      padding-left: max(12px, env(safe-area-inset-left));
+      padding-right: max(12px, env(safe-area-inset-right));
+    }
 
-  .mobile-order-entry .check-item input {
-    width: 20px;
-    height: 20px;
+    .layout,
+    .single-layout,
+    .sync-shell {
+      padding-left: max(12px, env(safe-area-inset-left));
+      padding-right: max(12px, env(safe-area-inset-right));
+    }
   }
+}
 
-  .mobile-order-entry .btn.full {
-    padding: 11px 13px;
-    font-size: 15px;
+/*
+ * 5. Tắt iOS callout khi giữ ngón tay trên ảnh / text không cần thiết
+ */
+.set-card,
+.stat-card,
+.panel,
+.sync-banner {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Cho phép chọn text ở nội dung cần đọc */
+.table td,
+.table th,
+.set-losers,
+.set-meta,
+.help,
+.section-heading p {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/*
+ * 6. Trên iPhone nhỏ (SE / mini, ~375px) — giữ stat card 2 cột
+ *    thay vì 1 cột (tránh quá nhiều khoảng trắng thừa)
+ */
+@media (max-width: 375px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
 
-  .mobile-order-summary-cards {
-    gap: 8px;
+@media (max-width: 340px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
   }
+}
 
-  .mobile-order-summary-cards .stat-card {
-    padding: 14px 12px;
-    min-height: 92px;
-  }
-
-  .mobile-order-summary-cards .stat-card p {
-    font-size: 12px;
-  }
-
-  .mobile-order-summary-cards .stat-card strong {
-    font-size: 24px;
-  }
-
-  .mobile-order-summary-table .table {
-    min-width: 620px;
-  }
-
-  .mobile-order-summary-table .table th,
-  .mobile-order-summary-table .table td {
-    padding: 10px 11px;
-    font-size: 14px;
-  }
-
-  .mobile-order-summary-table .table th {
-    font-size: 12px;
+/*
+ * 7. appearance: none trên iOS để input date / select hiển thị
+ *    đúng border-radius tùy chỉnh (iOS thêm style riêng)
+ */
+@media (max-width: 768px) {
+  select {
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
   }
 }
