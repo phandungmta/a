@@ -11,8 +11,23 @@
         return allowedOrigins.indexOf(origin) >= 0;
       }
 
-      function respond(targetWindow, targetOrigin, id, ok, payload, error) {
-        targetWindow.postMessage({
+      function getHostWindow() {
+        if (window.top && window.top !== window) {
+          return window.top;
+        }
+
+        if (window.parent && window.parent !== window) {
+          return window.parent;
+        }
+
+        return null;
+      }
+
+      function respond(targetOrigin, id, ok, payload, error) {
+        const hostWindow = getHostWindow();
+        if (!hostWindow) return;
+
+        hostWindow.postMessage({
           namespace: MESSAGE_NAMESPACE,
           type: 'bridge-response',
           id: id,
@@ -22,19 +37,19 @@
         }, targetOrigin);
       }
 
-      function callServer(method, payload, targetWindow, targetOrigin, id) {
+      function callServer(method, payload, targetOrigin, id) {
         if (typeof google === 'undefined' || !google.script || !google.script.run) {
-          respond(targetWindow, targetOrigin, id, false, null, 'google.script.run không khả dụng.');
+          respond(targetOrigin, id, false, null, 'google.script.run không khả dụng.');
           return;
         }
 
         const runner = google.script.run
           .withSuccessHandler(function (result) {
-            respond(targetWindow, targetOrigin, id, true, result, '');
+            respond(targetOrigin, id, true, result, '');
           })
           .withFailureHandler(function (error) {
             const message = error && error.message ? error.message : String(error || 'Lỗi Apps Script không xác định.');
-            respond(targetWindow, targetOrigin, id, false, null, message);
+            respond(targetOrigin, id, false, null, message);
           });
 
         if (method === 'ping') {
@@ -52,7 +67,7 @@
           return;
         }
 
-        respond(targetWindow, targetOrigin, id, false, null, 'Phương thức bridge không hợp lệ.');
+        respond(targetOrigin, id, false, null, 'Phương thức bridge không hợp lệ.');
       }
 
       window.addEventListener('message', function (event) {
@@ -63,16 +78,17 @@
         if (message.type !== 'bridge-request') return;
         if (!message.id || !message.method) return;
 
-        callServer(message.method, message.payload || {}, event.source, event.origin, message.id);
+        callServer(message.method, message.payload || {}, event.origin, message.id);
       });
 
       window.addEventListener('load', function () {
-        if (!window.parent || window.parent === window) return;
+        const hostWindow = getHostWindow();
+        if (!hostWindow) return;
 
-        window.parent.postMessage({
+        hostWindow.postMessage({
           namespace: MESSAGE_NAMESPACE,
           type: 'bridge-ready'
-        }, '*');
+        }, allowedOrigins[0] || '*');
       });
     </script>
   </head>

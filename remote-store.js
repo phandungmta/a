@@ -40,6 +40,10 @@
   let bridgeReadyResolver = null;
   let bridgeReadyRejecter = null;
   let bridgeReadyTimer = null;
+  let bridgeReadyPollTimer = null;
+  let bridgeReadySeen = false;
+  let bridgeTargetOrigin = '';
+  let bridgeTargetWindow = null;
   const pendingRequests = new Map();
 
   function getBridgeOrigin() {
@@ -54,6 +58,27 @@
 
   function hasRemoteBridge() {
     return Boolean(config.bridgeUrl && getBridgeOrigin());
+  }
+
+  function hasBridgeTarget() {
+    return Boolean(bridgeReadySeen && bridgeTargetOrigin);
+  }
+
+  function isGoogleAppsSandboxOrigin(origin) {
+    if (!origin) return false;
+
+    try {
+      const hostname = new URL(origin).hostname;
+      return hostname === 'script.googleusercontent.com' || hostname.endsWith('.script.googleusercontent.com');
+    } catch {
+      return false;
+    }
+  }
+
+  function isBridgeMessageOrigin(origin) {
+    return origin === getBridgeOrigin()
+      || origin === bridgeTargetOrigin
+      || isGoogleAppsSandboxOrigin(origin);
   }
 
   function readJsonStorage(key) {
@@ -114,18 +139,19 @@
   }
 
   function handleBridgeMessage(event) {
-    if (event.origin !== getBridgeOrigin()) return;
+    if (!isBridgeMessageOrigin(event.origin)) return;
 
     const message = event.data || {};
     if (message.namespace !== config.messageNamespace) return;
 
     if (message.type === 'bridge-ready') {
-      if (!bridgeReadyResolver) return;
+      bridgeReadySeen = true;
+      bridgeTargetOrigin = event.origin;
+      bridgeTargetWindow = tryGetEventSource(event) || bridgeTargetWindow;
 
-      if (bridgeReadyTimer) {
-        root.clearTimeout(bridgeReadyTimer);
-        bridgeReadyTimer = null;
-      }
+      clearBridgeReadyWaiters();
+
+      if (!bridgeReadyResolver) return;
 
       const resolve = bridgeReadyResolver;
       bridgeReadyResolver = null;
@@ -155,26 +181,110 @@
     bridgeListenerAttached = true;
   }
 
+  function clearBridgeReadyWaiters() {
+    if (bridgeReadyTimer) {
+      root.clearTimeout(bridgeReadyTimer);
+      bridgeReadyTimer = null;
+    }
+
+    if (bridgeReadyPollTimer) {
+      root.clearInterval(bridgeReadyPollTimer);
+      bridgeReadyPollTimer = null;
+    }
+  }
+
+  function tryGetEventSource(event) {
+    try {
+      return event.source || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function appendBridgeChildTargets(targets, frameWindow, targetOrigin) {
+    if (!frameWindow) return;
+
+    try {
+      const childFrames = frameWindow.frames;
+      const childCount = Number(childFrames.length || 0);
+
+      for (let index = 0; index < childCount; index += 1) {
+        const childWindow = childFrames[index];
+        if (!childWindow) continue;
+
+        const exists = targets.some((entry) => entry.window === childWindow);
+        if (exists) continue;
+
+        targets.push({
+          window: childWindow,
+          origin: targetOrigin
+        });
+        appendBridgeChildTargets(targets, childWindow, targetOrigin);
+      }
+    } catch {
+      // Cross-origin child traversal is best-effort only.
+    }
+  }
+
+  function getBridgeRequestTargets() {
+    const targets = [];
+    const googleOrigin = bridgeTargetOrigin || getBridgeOrigin();
+
+    if (bridgeTargetWindow) {
+      targets.push({
+        window: bridgeTargetWindow,
+        origin: googleOrigin
+      });
+    }
+
+    const iframe = ensureBridgeIframe();
+    const outerWindow = iframe.contentWindow;
+
+    if (outerWindow && !targets.some((entry) => entry.window === outerWindow)) {
+      targets.push({
+        window: outerWindow,
+        origin: getBridgeOrigin()
+      });
+    }
+
+    appendBridgeChildTargets(targets, outerWindow, googleOrigin);
+    return targets;
+  }
+
   function ensureBridgeReady() {
     if (!hasRemoteBridge()) {
       return Promise.reject(new Error('Chưa cấu hình bridge Apps Script.'));
+    }
+
+    if (hasBridgeTarget()) {
+      return Promise.resolve(bridgeTargetWindow);
     }
 
     if (bridgeSetupPromise) return bridgeSetupPromise;
 
     attachBridgeListener();
     bridgeSetupPromise = new Promise((resolve, reject) => {
-      ensureBridgeIframe();
       bridgeReadyResolver = resolve;
       bridgeReadyRejecter = reject;
-
       bridgeReadyTimer = root.setTimeout(() => {
         bridgeReadyResolver = null;
         bridgeReadyRejecter = null;
-        bridgeReadyTimer = null;
+        clearBridgeReadyWaiters();
         bridgeSetupPromise = null;
         reject(new Error('Bridge Apps Script không phản hồi.'));
       }, config.requestTimeoutMs);
+
+      bridgeReadyPollTimer = root.setInterval(() => {
+        if (!hasBridgeTarget() || !bridgeReadyResolver) return;
+
+        const resolveBridgeReady = bridgeReadyResolver;
+        bridgeReadyResolver = null;
+        bridgeReadyRejecter = null;
+        clearBridgeReadyWaiters();
+        resolveBridgeReady(bridgeTargetWindow);
+      }, 25);
+
+      ensureBridgeIframe();
     });
 
     return bridgeSetupPromise;
@@ -183,10 +293,9 @@
   async function callBridge(method, payload) {
     await ensureBridgeReady();
 
-    const iframe = ensureBridgeIframe();
-    const targetWindow = iframe.contentWindow;
+    const requestTargets = getBridgeRequestTargets();
 
-    if (!targetWindow) {
+    if (!requestTargets.length) {
       throw new Error('Không truy cập được cửa sổ bridge Apps Script.');
     }
 
@@ -199,13 +308,19 @@
 
       pendingRequests.set(id, { resolve, reject, timer });
 
-      targetWindow.postMessage({
-        namespace: config.messageNamespace,
-        type: 'bridge-request',
-        id,
-        method,
-        payload: payload || {}
-      }, getBridgeOrigin());
+      requestTargets.forEach(({ window: targetWindow, origin: targetOrigin }) => {
+        try {
+          targetWindow.postMessage({
+            namespace: config.messageNamespace,
+            type: 'bridge-request',
+            id,
+            method,
+            payload: payload || {}
+          }, targetOrigin);
+        } catch {
+          // Keep trying other known bridge windows.
+        }
+      });
     });
   }
 
