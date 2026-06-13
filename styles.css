@@ -402,8 +402,24 @@ input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(29, 78, 2
     padding: 15px 16px;
   }
 
+  .mobile-order-entry .check-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .mobile-order-entry .check-item {
+    height: 100%;
+  }
+
+  .mobile-order-entry .check-item label {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
   .mobile-order-entry .check-item span {
-    font-size: 17px;
+    font-size: 15px;
+    line-height: 1.25;
+    white-space: normal;
   }
 
   .mobile-order-entry .btn.full {
