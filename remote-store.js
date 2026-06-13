@@ -13,7 +13,7 @@
   };
 
   const DEPLOYMENT_BRIDGE_URLS = Object.freeze({
-    'https://a-ten-mauve.vercel.app': 'https://script.google.com/macros/s/AKfycbzaluFbu_qqalxfXIERdv7SsMQMU9QINAh5a4uzaeOOdW8i01bAlthdk9z7bWjUvcCO/exec'
+    'https://a-ten-mauve.vercel.app': 'https://script.google.com/macros/s/AKfycbySZeitDAPXKM-z5HPgS3nL0a28rDla8547j0FN296ZSzGeTy4GHVfMTCU6-Vp7Rlsy3w/exec'
   });
 
   function resolveConfig() {
@@ -25,7 +25,7 @@
       ? root.location.origin
       : '';
 
-    if (DEPLOYMENT_BRIDGE_URLS[runtimeOrigin]) {
+    if (!runtimeConfig.bridgeUrl && DEPLOYMENT_BRIDGE_URLS[runtimeOrigin]) {
       runtimeConfig.bridgeUrl = DEPLOYMENT_BRIDGE_URLS[runtimeOrigin];
     }
 
